@@ -18,4 +18,28 @@ class DashboardController extends AbstractController
             'user' => $this->getUser(),
         ]);
     }
+
+    #[Route('/applications', name: 'app_admin_applications')]
+    public function applications(): Response
+    {
+        return $this->render('admin/applications.html.twig', [
+            'user' => $this->getUser(),
+        ]);
+    }
+
+    #[Route('/courses', name: 'app_admin_courses')]
+    public function courses(): Response
+    {
+        return $this->render('admin/courses.html.twig', [
+            'user' => $this->getUser(),
+        ]);
+    }
+
+    #[Route('/users', name: 'app_admin_users')]
+    public function users(): Response
+    {
+        return $this->render('admin/users.html.twig', [
+            'user' => $this->getUser(),
+        ]);
+    }
 }

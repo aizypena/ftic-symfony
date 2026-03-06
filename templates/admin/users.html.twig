@@ -1,0 +1,52 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}User Management – FTIC Admin{% endblock %}
+
+{% block body %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
+        <p class="text-sm text-gray-500 mt-1">Manage trainers and student accounts</p>
+    </div>
+    <button class="inline-flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg shadow-sm transition"
+            style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Add User
+    </button>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-900">All Users</h2>
+        <div class="flex gap-2">
+            <span class="text-xs font-medium px-3 py-1 rounded-full cursor-pointer" style="background-color:#e8f2ea;color:#0b3612;">All</span>
+            <span class="text-xs font-medium px-3 py-1 rounded-full cursor-pointer text-gray-500 bg-gray-100 hover:bg-gray-200">Trainers</span>
+            <span class="text-xs font-medium px-3 py-1 rounded-full cursor-pointer text-gray-500 bg-gray-100 hover:bg-gray-200">Students</span>
+        </div>
+    </div>
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
+                <th class="px-6 py-3 font-medium">Name</th>
+                <th class="px-6 py-3 font-medium">Email</th>
+                <th class="px-6 py-3 font-medium">Role</th>
+                <th class="px-6 py-3 font-medium">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="4" class="px-6 py-12 text-center">
+                    <div class="flex flex-col items-center text-gray-400">
+                        <svg class="w-12 h-12 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <p class="text-sm font-medium">No users found</p>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

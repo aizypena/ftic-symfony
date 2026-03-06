@@ -6,72 +6,89 @@
 {% block footer %}{% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-gradient-to-br from-feu-pale to-[#d4e8d7] flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md">
+<div class="min-h-screen flex">
 
-        {# Logo / Brand #}
-        <div class="text-center mb-8">
-            <a href="{{ path('app_home') }}" class="text-3xl font-extrabold text-feu-dark tracking-tight">FTIC</a>
-            <p class="text-gray-500 mt-2 text-sm">Sign in to your account</p>
+    {# Left panel #}
+    <div class="hidden lg:flex w-1/2 flex-col justify-between p-12" style="background-color:#0b3612;">
+        <a href="{{ path('app_home') }}" class="text-white text-2xl font-extrabold tracking-tight">FTIC</a>
+        <div>
+            <p class="text-white text-3xl font-bold leading-snug mb-4">Far Eastern University<br>Training &amp; Innovation Center</p>
+            <p class="text-sm" style="color:#a8c9af;">Sign in to access your personalized dashboard.</p>
         </div>
+        <p class="text-xs" style="color:#6a9e74;">&copy; {{ "now"|date("Y") }} FTIC. All rights reserved.</p>
+    </div>
 
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+    {# Right panel #}
+    <div class="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-white">
+        <div class="w-full max-w-sm">
+
+            {# Mobile logo #}
+            <div class="lg:hidden text-center mb-8">
+                <a href="{{ path('app_home') }}" class="text-2xl font-extrabold tracking-tight" style="color:#0b3612;">FTIC</a>
+            </div>
+
+            <h1 class="text-2xl font-bold text-gray-900 mb-1">Welcome back</h1>
+            <p class="text-sm text-gray-400 mb-8">Enter your credentials to continue</p>
 
             {% if error %}
-                <div class="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 flex items-start gap-2">
-                    <svg class="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <div class="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                     </svg>
                     {{ error.messageKey|trans(error.messageData, 'security') }}
                 </div>
             {% endif %}
 
-            <form method="post" action="{{ path('app_login') }}">
+            <form method="post" action="{{ path('app_login') }}" class="space-y-5">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-                <div class="mb-5">
-                    <label for="inputEmail" class="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
+                <div>
+                    <label for="inputEmail" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
                     <input type="email"
                            id="inputEmail"
                            name="_username"
                            value="{{ last_username }}"
-                           required
-                           autofocus
+                           required autofocus
                            autocomplete="email"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-feu-light focus:border-transparent text-sm transition"
-                           placeholder="you@example.com">
+                           placeholder="you@example.com"
+                           class="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent transition"
+                           style="--tw-ring-color:#5c8d67;">
                 </div>
 
-                <div class="mb-6">
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label for="inputPassword" class="block text-sm font-medium text-gray-700">Password</label>
-                    </div>
+                <div>
+                    <label for="inputPassword" class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Password</label>
                     <input type="password"
                            id="inputPassword"
                            name="_password"
                            required
                            autocomplete="current-password"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-feu-light focus:border-transparent text-sm transition"
-                           placeholder="••••••••">
+                           placeholder="••••••••"
+                           class="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent transition"
+                           style="--tw-ring-color:#5c8d67;">
                 </div>
 
-                <div class="flex items-center mb-6">
-                    <input type="checkbox" id="remember_me" name="_remember_me"
-                           class="h-4 w-4 text-feu-dark border-gray-300 rounded focus:ring-feu-light">
-                    <label for="remember_me" class="ml-2 text-sm text-gray-600">Remember me</label>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="remember_me" name="_remember_me"
+                               class="h-4 w-4 rounded border-gray-300 focus:ring-feu-light" style="accent-color:#0b3612;">
+                        <span class="text-sm text-gray-500">Remember me</span>
+                    </label>
                 </div>
 
                 <button type="submit"
-                        class="w-full bg-feu-dark hover:bg-[#0d4016] text-white font-semibold py-2.5 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-feu-light text-sm">
+                        class="w-full py-3 rounded-lg text-white text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-feu-light"
+                        style="background-color:#0b3612;"
+                        onmouseover="this.style.backgroundColor='#5c8d67'"
+                        onmouseout="this.style.backgroundColor='#0b3612'">
                     Sign In
                 </button>
             </form>
+
+            <p class="mt-8 text-center text-xs text-gray-400">
+                <a href="{{ path('app_home') }}" class="hover:underline" style="color:#0b3612;">&larr; Back to home</a>
+            </p>
         </div>
-
-        <p class="text-center text-sm text-gray-500 mt-6">
-            <a href="{{ path('app_home') }}" class="text-feu-dark hover:text-feu-light font-medium transition">&larr; Back to home</a>
-        </p>
-
     </div>
+
 </div>
 {% endblock %}

@@ -18,4 +18,28 @@ class DashboardController extends AbstractController
             'user' => $this->getUser(),
         ]);
     }
+
+    #[Route('/courses', name: 'app_trainer_courses')]
+    public function courses(): Response
+    {
+        return $this->render('trainer/courses.html.twig', [
+            'user' => $this->getUser(),
+        ]);
+    }
+
+    #[Route('/submissions', name: 'app_trainer_submissions')]
+    public function submissions(): Response
+    {
+        return $this->render('trainer/submissions.html.twig', [
+            'user' => $this->getUser(),
+        ]);
+    }
+
+    #[Route('/calendar', name: 'app_trainer_calendar')]
+    public function calendar(): Response
+    {
+        return $this->render('trainer/calendar.html.twig', [
+            'user' => $this->getUser(),
+        ]);
+    }
 }

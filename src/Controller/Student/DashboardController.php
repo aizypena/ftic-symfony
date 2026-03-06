@@ -18,4 +18,12 @@ class DashboardController extends AbstractController
             'user' => $this->getUser(),
         ]);
     }
+
+    #[Route('/calendar', name: 'app_student_calendar')]
+    public function calendar(): Response
+    {
+        return $this->render('student/calendar.html.twig', [
+            'user' => $this->getUser(),
+        ]);
+    }
 }

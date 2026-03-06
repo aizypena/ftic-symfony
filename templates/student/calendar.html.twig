@@ -1,0 +1,43 @@
+{% extends 'student/base.html.twig' %}
+
+{% block title %}Calendar – FTIC Student{% endblock %}
+
+{% block body %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Calendar</h1>
+    <p class="text-sm text-gray-500 mt-1">Your schedule and upcoming classes</p>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-base font-semibold text-gray-900">{{ "now"|date("F Y") }}</h2>
+        <div class="flex gap-2">
+            <button class="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">&larr; Prev</button>
+            <button class="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">Next &rarr;</button>
+        </div>
+    </div>
+
+    {# Day headers #}
+    <div class="grid grid-cols-7 mb-2">
+        {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}
+            <div class="text-center text-xs font-medium text-gray-400 uppercase py-2">{{ day }}</div>
+        {% endfor %}
+    </div>
+
+    {# Placeholder grid #}
+    <div class="grid grid-cols-7 gap-1">
+        {% for i in 1..35 %}
+            <div class="aspect-square flex items-center justify-center rounded-lg text-sm text-gray-400 hover:bg-gray-50 cursor-pointer transition">
+                {{ i <= 31 ? i : '' }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6 flex flex-col items-center justify-center py-6 text-center border-t border-gray-100">
+        <svg class="w-10 h-10 mb-2 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <p class="text-sm font-medium text-gray-500">No events scheduled</p>
+    </div>
+</div>
+{% endblock %}
