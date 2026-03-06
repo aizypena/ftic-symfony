@@ -9,3 +9,15 @@
 
 controllers:
     resource: routing.controllers
+
+admin_controllers:
+    resource: '../src/Controller/Admin/'
+    type: attribute
+
+trainer_controllers:
+    resource: '../src/Controller/Trainer/'
+    type: attribute
+
+student_controllers:
+    resource: '../src/Controller/Student/'
+    type: attribute
