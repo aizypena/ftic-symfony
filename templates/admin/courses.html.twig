@@ -8,30 +8,63 @@
         <h1 class="text-2xl font-bold text-gray-900">Course Management</h1>
         <p class="text-sm text-gray-500 mt-1">Create and manage training courses</p>
     </div>
-    <button class="inline-flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg shadow-sm transition"
-            style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
+    <a href="{{ path('app_admin_courses_new') }}"
+       class="inline-flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg shadow-sm transition"
+       style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
         New Course
-    </button>
+    </a>
 </div>
 
+{% for message in app.flashes('success') %}
+    <div class="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">{{ message }}</div>
+{% endfor %}
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-100">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 class="text-base font-semibold text-gray-900">All Courses</h2>
+        <span class="text-xs text-gray-400">{{ courses|length }} course{{ courses|length != 1 ? 's' : '' }}</span>
     </div>
     <table class="w-full text-sm">
         <thead>
             <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
                 <th class="px-6 py-3 font-medium">Course Name</th>
                 <th class="px-6 py-3 font-medium">Trainer</th>
-                <th class="px-6 py-3 font-medium">Enrolled</th>
                 <th class="px-6 py-3 font-medium">Status</th>
+                <th class="px-6 py-3 font-medium">Created</th>
                 <th class="px-6 py-3 font-medium">Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-gray-50">
+            {% for course in courses %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ course.name }}</td>
+                <td class="px-6 py-4 text-gray-500">
+                    {{ course.trainer ? course.trainer.displayName : '—' }}
+                </td>
+                <td class="px-6 py-4">
+                    {% if course.status == 'active' %}
+                        <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full" style="background-color:#e8f2ea;color:#0b3612;">Active</span>
+                    {% else %}
+                        <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-gray-400">{{ course.createdAt|date('M d, Y') }}</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <a href="{{ path('app_admin_courses_edit', {id: course.id}) }}"
+                           class="text-xs font-medium hover:underline" style="color:#0b3612;">Edit</a>
+                        <form method="post" action="{{ path('app_admin_courses_delete', {id: course.id}) }}"
+                              onsubmit="return confirm('Delete this course?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-course-' ~ course.id) }}">
+                            <button type="submit" class="text-xs font-medium text-red-500 hover:underline">Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
             <tr>
                 <td colspan="5" class="px-6 py-12 text-center">
                     <div class="flex flex-col items-center text-gray-400">
@@ -39,10 +72,13 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                         </svg>
                         <p class="text-sm font-medium">No courses created yet</p>
+                        <a href="{{ path('app_admin_courses_new') }}" class="mt-2 text-xs font-medium hover:underline" style="color:#0b3612;">Create your first course</a>
                     </div>
                 </td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
 {% endblock %}
+
