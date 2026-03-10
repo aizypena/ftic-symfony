@@ -181,10 +181,10 @@
                                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
                                style="background-color:#5c8d67;">View</a>
                             <form method="post"
-                                  action="{{ path('app_trainer_material_delete', {id: material.id}) }}"
-                                  onsubmit="return confirm('Delete this PDF?')">
+                                  action="{{ path('app_trainer_material_delete', {id: material.id}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete-material-' ~ material.id) }}">
-                                <button type="submit"
+                                <button type="button"
+                                        onclick="openConfirmModal(this.closest('form'), 'This will permanently delete &quot;{{ material.originalName|e('html_attr') }}&quot;. This action cannot be undone.', 'Delete PDF')"
                                         class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white bg-red-500 hover:bg-red-600 transition">
                                     Delete
                                 </button>

@@ -1,0 +1,95 @@
+{# ── Toast container — all inline styles, no Tailwind dependency ── #}
+<div id="toast-container" style="
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    pointer-events:none;
+"></div>
+
+<script>
+(function () {
+
+    var STYLES = {
+        success: { bg:'#f0fdf4', border:'#86efac', icon:'#16a34a', text:'#15803d',
+            svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' },
+        error:   { bg:'#fef2f2', border:'#fca5a5', icon:'#dc2626', text:'#b91c1c',
+            svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' },
+        warning: { bg:'#fffbeb', border:'#fde68a', icon:'#d97706', text:'#92400e',
+            svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>' },
+        info:    { bg:'#eff6ff', border:'#93c5fd', icon:'#2563eb', text:'#1d4ed8',
+            svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>' },
+    };
+
+    function dismissToast(el) {
+        if (!el || !el.parentElement) return;
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(60px)';
+        setTimeout(function(){ el.parentElement && el.parentElement.removeChild(el); }, 320);
+    }
+
+    function showToast(type, message) {
+        var s = STYLES[type] || STYLES.info;
+        var container = document.getElementById('toast-container');
+        if (!container) return;
+
+        var el = document.createElement('div');
+        el.style.cssText = [
+            'display:flex',
+            'align-items:flex-start',
+            'gap:12px',
+            'min-width:280px',
+            'max-width:360px',
+            'padding:14px 16px',
+            'border-radius:10px',
+            'border:1px solid ' + s.border,
+            'background:' + s.bg,
+            'box-shadow:0 4px 20px rgba(0,0,0,0.12)',
+            'pointer-events:auto',
+            'opacity:0',
+            'transform:translateX(60px)',
+            'transition:opacity 0.3s ease, transform 0.3s ease',
+        ].join(';');
+
+        el.innerHTML =
+            '<svg style="flex-shrink:0;width:20px;height:20px;stroke:' + s.icon + ';margin-top:1px" fill="none" viewBox="0 0 24 24" stroke-width="2">' + s.svg + '</svg>' +
+            '<p style="flex:1;font-size:13.5px;line-height:1.5;color:' + s.text + ';font-weight:500;margin:0;word-break:break-word">' + message + '</p>' +
+            '<button style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:2px;line-height:1;opacity:0.5" onclick="(function(b){var p=b.parentElement;if(p)window._dismissToast(p);})(this)">' +
+                '<svg style="width:15px;height:15px;stroke:' + s.icon + '" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' +
+            '</button>';
+
+        container.appendChild(el);
+
+        // Trigger animation on next frame
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                el.style.opacity = '1';
+                el.style.transform = 'translateX(0)';
+            });
+        });
+
+        // Auto-dismiss after 4 seconds
+        setTimeout(function(){ dismissToast(el); }, 4000);
+    }
+
+    window._dismissToast = dismissToast;
+    window.showToast     = showToast;
+
+    // Flash messages from Symfony session (rendered server-side)
+    var serverFlashes = [
+        {% for msg in app.flashes('success') %}{ type:'success', message:{{ msg|json_encode|raw }} },{% endfor %}
+        {% for msg in app.flashes('error') %}{ type:'error', message:{{ msg|json_encode|raw }} },{% endfor %}
+        {% for msg in app.flashes('warning') %}{ type:'warning', message:{{ msg|json_encode|raw }} },{% endfor %}
+        {% for msg in app.flashes('info') %}{ type:'info', message:{{ msg|json_encode|raw }} },{% endfor %}
+    ];
+
+    // Script is at bottom of <body> — DOM is already ready, fire immediately
+    for (var i = 0; i < serverFlashes.length; i++) {
+        showToast(serverFlashes[i].type, serverFlashes[i].message);
+    }
+
+})();
+</script>

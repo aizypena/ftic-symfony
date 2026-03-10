@@ -36,7 +36,7 @@ class CourseType extends AbstractType
                 'query_builder' => fn(UserRepository $repo) => $repo->createQueryBuilder('u')
                     ->where('u.role = :role')
                     ->setParameter('role', 'trainer')
-                    ->orderBy('u.fullName', 'ASC'),
+                    ->orderBy('u.lastName', 'ASC'),
             ])
             ->add('status', ChoiceType::class, [
                 'label'   => 'Status',
