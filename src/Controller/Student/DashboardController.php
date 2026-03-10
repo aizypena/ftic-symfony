@@ -3,6 +3,7 @@
 namespace App\Controller\Student;
 
 use App\Repository\CourseRepository;
+use App\Repository\CourseWeekRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -53,7 +54,7 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/courses/{id}', name: 'app_student_course_view')]
-    public function courseView(int $id, CourseRepository $courseRepo): Response
+    public function courseView(int $id, CourseRepository $courseRepo, CourseWeekRepository $weekRepo): Response
     {
         /** @var \App\Entity\User $me */
         $me     = $this->getUser();
@@ -64,9 +65,19 @@ class DashboardController extends AbstractController
             return $this->redirectToRoute('app_student_courses');
         }
 
+        // Build weeks 1-14 map (same pattern as trainer controller)
+        $weeks = [];
+        for ($w = 1; $w <= 14; $w++) {
+            $week = $weekRepo->findOneBy(['course' => $course, 'weekNumber' => $w]);
+            if ($week) {
+                $weeks[$w] = $week;
+            }
+        }
+
         return $this->render('student/course_view.html.twig', [
             'user'   => $me,
             'course' => $course,
+            'weeks'  => $weeks,
         ]);
     }
 

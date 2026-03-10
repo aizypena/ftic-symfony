@@ -36,11 +36,6 @@
 
 {# ── Weekly Materials Accordion ── #}
 <div class="space-y-3">
-{% set weeks = {} %}
-{% for week in course.weeks %}
-    {% set weeks = weeks|merge({(week.weekNumber): week}) %}
-{% endfor %}
-
 {% for w in 1..14 %}
     {% set week = weeks[w] is defined ? weeks[w] : null %}
     {% set hasMaterials = week and week.materials|length > 0 %}
@@ -89,17 +84,33 @@
                                 <p class="text-xs text-gray-400">{{ material.uploadedAt|date('M d, Y') }}</p>
                             </div>
                         </div>
-                        <a href="{{ asset('uploads/materials/' ~ material.filename) }}"
-                           target="_blank"
-                           class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white shrink-0 flex items-center gap-1.5"
-                           style="background-color:#0b3612;"
-                           onmouseover="this.style.backgroundColor='#5c8d67'"
-                           onmouseout="this.style.backgroundColor='#0b3612'">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                            </svg>
-                            View PDF
-                        </a>
+                        <div class="flex items-center gap-2 shrink-0">
+                            {# View button — opens PDF modal #}
+                            <button type="button"
+                                    onclick="openPdfViewer('{{ asset('uploads/materials/' ~ material.filename) }}', '{{ material.originalName|e('html_attr') }}')"
+                                    class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white flex items-center gap-1.5 transition"
+                                    style="background-color:#0b3612;"
+                                    onmouseover="this.style.backgroundColor='#5c8d67'"
+                                    onmouseout="this.style.backgroundColor='#0b3612'">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                View
+                            </button>
+                            {# Download button #}
+                            <a href="{{ asset('uploads/materials/' ~ material.filename) }}"
+                               download="{{ material.originalName }}"
+                               class="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                               style="background-color:#f3f4f6;color:#374151;"
+                               onmouseover="this.style.backgroundColor='#e5e7eb'"
+                               onmouseout="this.style.backgroundColor='#f3f4f6'">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Download
+                            </a>
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -120,6 +131,72 @@ function toggleWeek(n) {
     body.style.display    = open ? 'none' : 'block';
     chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
+
+function openPdfViewer(url, name) {
+    document.getElementById('pdf-viewer-title').textContent = name;
+    document.getElementById('pdf-viewer-frame').src = url;
+    document.getElementById('pdf-viewer-download').href = url;
+    document.getElementById('pdf-viewer-download').setAttribute('download', name);
+    document.getElementById('pdf-viewer-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closePdfViewer() {
+    document.getElementById('pdf-viewer-modal').style.display = 'none';
+    document.getElementById('pdf-viewer-frame').src = '';
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePdfViewer();
+});
 </script>
+
+{# ── PDF Viewer Modal ── #}
+<div id="pdf-viewer-modal"
+     style="display:none; position:fixed; inset:0; z-index:1000; align-items:stretch; flex-direction:column; background:rgba(0,0,0,0.7);"
+     onclick="if(event.target===this) closePdfViewer()">
+
+    {# Modal card #}
+    <div style="display:flex; flex-direction:column; width:100%; height:100%; max-width:960px; margin:0 auto; background:#fff; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+
+        {# Header #}
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 20px; border-bottom:1px solid #e5e7eb; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                <div style="width:32px; height:32px; border-radius:8px; background:#e8f2ea; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg style="width:16px;height:16px;color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <span id="pdf-viewer-title" style="font-size:14px; font-weight:600; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <a id="pdf-viewer-download" href="#" download
+                   style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:7px 14px; border-radius:8px; background:#f3f4f6; color:#374151; text-decoration:none; transition:background .15s;"
+                   onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    <svg style="width:13px;height:13px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download
+                </a>
+                <button type="button" onclick="closePdfViewer()"
+                        style="width:32px; height:32px; border-radius:8px; border:none; background:#f3f4f6; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#6b7280;"
+                        onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        {# PDF iframe #}
+        <iframe id="pdf-viewer-frame"
+                src=""
+                style="flex:1; width:100%; border:none; background:#525659;"
+                allowfullscreen>
+        </iframe>
+
+    </div>
+</div>
 
 {% endblock %}
