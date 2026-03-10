@@ -5,58 +5,139 @@
 {% block body %}
 <div class="mb-6 flex items-center justify-between">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Applications</h1>
-        <p class="text-sm text-gray-500 mt-1">Review and manage all applicant submissions</p>
+        <h1 class="text-2xl font-bold text-gray-900">Student Applications</h1>
+        <p class="text-sm text-gray-500 mt-1">Review and approve student account requests</p>
     </div>
 </div>
 
-{# Pending stat card #}
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 mb-6 max-w-xs">
-    <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background-color:#e8f2ea;">
-        <svg class="w-6 h-6" style="color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-    </div>
-    <div>
-        <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Pending</p>
-        <p class="text-2xl font-bold text-gray-900">0</p>
-    </div>
-</div>
-
-{# Applicant list table #}
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="text-base font-semibold text-gray-900">Applicant List</h2>
-        <div class="relative">
-            <input type="text" placeholder="Search applicants…"
-                   class="text-sm border border-gray-200 rounded-lg py-1.5 pl-8 pr-3 focus:outline-none focus:ring-2 focus:border-transparent"
-                   style="--tw-ring-color:#5c8d67;">
-            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7 7 0 1116.65 16.65z"/>
+{# Stat cards #}
+<div class="flex gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background-color:#fef3c7;">
+            <svg class="w-6 h-6" style="color:#d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
         </div>
+        <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Pending</p>
+            <p class="text-2xl font-bold text-gray-900">{{ pending|length }}</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background-color:#e8f2ea;">
+            <svg class="w-6 h-6" style="color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-medium">Approved</p>
+            <p class="text-2xl font-bold text-gray-900">{{ approved|length }}</p>
+        </div>
+    </div>
+</div>
+
+{# ── Pending Applications ── #}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-yellow-400"></span>
+        <h2 class="text-base font-semibold text-gray-900">Pending Approval</h2>
+        <span class="ml-auto text-xs text-gray-400">{{ pending|length }} request{{ pending|length != 1 ? 's' : '' }}</span>
     </div>
     <table class="w-full text-sm">
         <thead>
             <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
                 <th class="px-6 py-3 font-medium">Applicant</th>
-                <th class="px-6 py-3 font-medium">Date Created</th>
+                <th class="px-6 py-3 font-medium">Email</th>
                 <th class="px-6 py-3 font-medium">Status</th>
-                <th class="px-6 py-3 font-medium">Action</th>
+                <th class="px-6 py-3 font-medium">Actions</th>
             </tr>
         </thead>
-        <tbody>
-            {# Replace with real data loop later #}
-            <tr>
-                <td colspan="4" class="px-6 py-12 text-center">
-                    <div class="flex flex-col items-center text-gray-400">
-                        <svg class="w-12 h-12 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                        <p class="text-sm font-medium">No applications found</p>
+        <tbody class="divide-y divide-gray-50">
+            {% for student in pending %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ student.fullName ?: '—' }}</td>
+                <td class="px-6 py-4 text-gray-500">{{ student.email }}</td>
+                <td class="px-6 py-4">
+                    <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700">Pending</span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-2">
+                        {# Approve #}
+                        <form method="post" action="{{ path('app_admin_application_confirm', {id: student.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('confirm-student-' ~ student.id) }}">
+                            <button type="submit"
+                                    class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition"
+                                    style="background-color:#0b3612;"
+                                    onmouseover="this.style.backgroundColor='#5c8d67'"
+                                    onmouseout="this.style.backgroundColor='#0b3612'">
+                                Approve
+                            </button>
+                        </form>
+                        {# Reject #}
+                        <form method="post" action="{{ path('app_admin_application_reject', {id: student.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('reject-student-' ~ student.id) }}">
+                            <button type="button"
+                                    onclick="openConfirmModal(this.closest('form'), 'This will permanently reject and delete the application from {{ student.displayName|e('html_attr') }}.', 'Reject Application')"
+                                    class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition">
+                                Reject
+                            </button>
+                        </form>
                     </div>
                 </td>
             </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="px-6 py-10 text-center">
+                    <p class="text-sm text-gray-400 font-medium">No pending applications</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── Approved Students ── #}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full" style="background-color:#0b3612;"></span>
+        <h2 class="text-base font-semibold text-gray-900">Approved Students</h2>
+        <span class="ml-auto text-xs text-gray-400">{{ approved|length }} student{{ approved|length != 1 ? 's' : '' }}</span>
+    </div>
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
+                <th class="px-6 py-3 font-medium">Name</th>
+                <th class="px-6 py-3 font-medium">Email</th>
+                <th class="px-6 py-3 font-medium">Status</th>
+                <th class="px-6 py-3 font-medium">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+            {% for student in approved %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ student.fullName ?: '—' }}</td>
+                <td class="px-6 py-4 text-gray-500">{{ student.email }}</td>
+                <td class="px-6 py-4">
+                    <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full" style="background-color:#e8f2ea;color:#0b3612;">Approved</span>
+                </td>
+                <td class="px-6 py-4">
+                    <form method="post" action="{{ path('app_admin_user_toggle_confirm', {id: student.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('toggle-confirm-' ~ student.id) }}">
+                        <button type="button"
+                                onclick="openConfirmModal(this.closest('form'), 'This will revoke access for {{ student.displayName|e('html_attr') }}. They will not be able to log in until re-approved.', 'Revoke Approval')"
+                                class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
+                            Revoke
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="px-6 py-10 text-center">
+                    <p class="text-sm text-gray-400 font-medium">No approved students yet</p>
+                </td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>

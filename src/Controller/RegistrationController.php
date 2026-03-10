@@ -26,6 +26,7 @@ class RegistrationController extends AbstractController
 
         $user = new User();
         $user->setRole('student');
+        $user->setIsConfirmed(false);
 
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
@@ -37,7 +38,7 @@ class RegistrationController extends AbstractController
             $em->persist($user);
             $em->flush();
 
-            $this->addFlash('success', 'Account created! You can now sign in.');
+            $this->addFlash('info', 'Your application has been submitted! Please wait for admin approval before signing in.');
             return $this->redirectToRoute('app_login');
         }
 

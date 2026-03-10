@@ -29,10 +29,12 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/applications', name: 'app_admin_applications')]
-    public function applications(): Response
+    public function applications(UserRepository $repo): Response
     {
         return $this->render('admin/applications.html.twig', [
-            'user' => $this->getUser(),
+            'user'     => $this->getUser(),
+            'pending'  => $repo->findBy(['role' => 'student', 'isConfirmed' => false], ['id' => 'DESC']),
+            'approved' => $repo->findBy(['role' => 'student', 'isConfirmed' => true],  ['id' => 'DESC']),
         ]);
     }
 
@@ -114,6 +116,7 @@ class DashboardController extends AbstractController
     public function userNew(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $hasher): Response
     {
         $newUser = new User();
+        $newUser->setIsConfirmed(true); // admin-created accounts are confirmed immediately
         $form    = $this->createForm(UserType::class, $newUser, ['is_edit' => false]);
         $form->handleRequest($request);
 
@@ -164,6 +167,42 @@ class DashboardController extends AbstractController
             $em->remove($editUser);
             $em->flush();
             $this->addFlash('success', 'User deleted.');
+        }
+        return $this->redirectToRoute('app_admin_users');
+    }
+
+    // ── Student Confirmation ─────────────────────────────────────────────────
+
+    #[Route('/applications/{id}/confirm', name: 'app_admin_application_confirm', methods: ['POST'])]
+    public function applicationConfirm(User $student, Request $request, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('confirm-student-' . $student->getId(), $request->request->get('_token'))) {
+            $student->setIsConfirmed(true);
+            $em->flush();
+            $this->addFlash('success', $student->getDisplayName() . '\'s application has been approved.');
+        }
+        return $this->redirectToRoute('app_admin_applications');
+    }
+
+    #[Route('/applications/{id}/reject', name: 'app_admin_application_reject', methods: ['POST'])]
+    public function applicationReject(User $student, Request $request, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('reject-student-' . $student->getId(), $request->request->get('_token'))) {
+            $em->remove($student);
+            $em->flush();
+            $this->addFlash('success', 'Application rejected and account removed.');
+        }
+        return $this->redirectToRoute('app_admin_applications');
+    }
+
+    #[Route('/users/{id}/toggle-confirm', name: 'app_admin_user_toggle_confirm', methods: ['POST'])]
+    public function userToggleConfirm(User $targetUser, Request $request, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('toggle-confirm-' . $targetUser->getId(), $request->request->get('_token'))) {
+            $targetUser->setIsConfirmed(!$targetUser->isConfirmed());
+            $em->flush();
+            $msg = $targetUser->isConfirmed() ? 'Account confirmed.' : 'Account approval revoked.';
+            $this->addFlash('success', $msg);
         }
         return $this->redirectToRoute('app_admin_users');
     }
