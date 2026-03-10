@@ -20,10 +20,15 @@ class UserType extends AbstractType
         $isEdit = $options['is_edit'];
 
         $builder
-            ->add('fullName', TextType::class, [
-                'label'    => 'Full Name',
+            ->add('firstName', TextType::class, [
+                'label'    => 'First Name',
                 'required' => false,
-                'attr'     => ['placeholder' => 'Enter full name'],
+                'attr'     => ['placeholder' => 'Enter first name'],
+            ])
+            ->add('lastName', TextType::class, [
+                'label'    => 'Last Name',
+                'required' => false,
+                'attr'     => ['placeholder' => 'Enter last name'],
             ])
             ->add('email', EmailType::class, [
                 'label' => 'Email Address',
