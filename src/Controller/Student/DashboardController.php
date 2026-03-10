@@ -2,6 +2,7 @@
 
 namespace App\Controller\Student;
 
+use App\Repository\CourseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -12,10 +13,60 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class DashboardController extends AbstractController
 {
     #[Route('/dashboard', name: 'app_student_dashboard')]
-    public function index(): Response
+    public function index(CourseRepository $courseRepo): Response
     {
+        /** @var \App\Entity\User $me */
+        $me = $this->getUser();
+
+        $myCourses = $courseRepo->createQueryBuilder('c')
+            ->join('c.students', 's')
+            ->where('s.id = :id')
+            ->setParameter('id', $me->getId())
+            ->orderBy('c.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
         return $this->render('student/dashboard.html.twig', [
-            'user' => $this->getUser(),
+            'user'      => $me,
+            'myCourses' => $myCourses,
+        ]);
+    }
+
+    #[Route('/courses', name: 'app_student_courses')]
+    public function courses(CourseRepository $courseRepo): Response
+    {
+        /** @var \App\Entity\User $me */
+        $me = $this->getUser();
+
+        $myCourses = $courseRepo->createQueryBuilder('c')
+            ->join('c.students', 's')
+            ->where('s.id = :id')
+            ->setParameter('id', $me->getId())
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('student/courses.html.twig', [
+            'user'      => $me,
+            'myCourses' => $myCourses,
+        ]);
+    }
+
+    #[Route('/courses/{id}', name: 'app_student_course_view')]
+    public function courseView(int $id, CourseRepository $courseRepo): Response
+    {
+        /** @var \App\Entity\User $me */
+        $me     = $this->getUser();
+        $course = $courseRepo->find($id);
+
+        if (!$course || !$course->hasStudent($me)) {
+            $this->addFlash('error', 'You are not enrolled in that course.');
+            return $this->redirectToRoute('app_student_courses');
+        }
+
+        return $this->render('student/course_view.html.twig', [
+            'user'   => $me,
+            'course' => $course,
         ]);
     }
 

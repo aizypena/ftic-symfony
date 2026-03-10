@@ -1,0 +1,125 @@
+{% extends 'student/base.html.twig' %}
+
+{% block title %}{{ course.name }} – FTIC Student{% endblock %}
+
+{% block body %}
+
+{# ── Header ── #}
+<div class="mb-6 flex items-start justify-between gap-4 flex-wrap">
+    <div>
+        <a href="{{ path('app_student_courses') }}" class="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 mb-2">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back to My Courses
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">{{ course.name }}</h1>
+        {% if course.description %}
+            <p class="text-sm text-gray-500 mt-1">{{ course.description }}</p>
+        {% endif %}
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+        <span class="text-xs font-semibold px-3 py-1.5 rounded-full"
+              style="{% if course.status == 'active' %}background-color:#e8f2ea;color:#0b3612;{% else %}background-color:#f3f4f6;color:#6b7280;{% endif %}">
+            {{ course.status|capitalize }}
+        </span>
+        {% if course.trainer %}
+        <div class="flex items-center gap-2 text-sm text-gray-500">
+            <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                {{ course.trainer.displayName|first|upper }}
+            </div>
+            {{ course.trainer.displayName }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Weekly Materials Accordion ── #}
+<div class="space-y-3">
+{% set weeks = {} %}
+{% for week in course.weeks %}
+    {% set weeks = weeks|merge({(week.weekNumber): week}) %}
+{% endfor %}
+
+{% for w in 1..14 %}
+    {% set week = weeks[w] is defined ? weeks[w] : null %}
+    {% set hasMaterials = week and week.materials|length > 0 %}
+
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+
+        {# Week header — toggle #}
+        <button type="button"
+                onclick="toggleWeek({{ w }})"
+                class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition">
+            <div class="flex items-center gap-3">
+                <span class="w-2 h-8 rounded-full shrink-0"
+                      style="background-color:{% if hasMaterials %}#0b3612{% else %}#d1d5db{% endif %};"></span>
+                <div>
+                    <p class="text-sm font-semibold text-gray-900">Week {{ w }}</p>
+                    {% if week and week.title matches '/^Week \\d+$/' == false %}
+                        <p class="text-xs text-gray-500">{{ week.title }}</p>
+                    {% endif %}
+                    {% if hasMaterials %}
+                        <p class="text-xs text-gray-400">{{ week.materials|length }} file{{ week.materials|length != 1 ? 's' : '' }}</p>
+                    {% else %}
+                        <p class="text-xs text-gray-400">No materials uploaded yet</p>
+                    {% endif %}
+                </div>
+            </div>
+            <svg id="chevron-{{ w }}" class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+
+        {# Week body #}
+        <div id="week-body-{{ w }}" style="display:none;" class="border-t border-gray-100 px-6 py-4">
+            {% if hasMaterials %}
+                <ul class="space-y-2">
+                    {% for material in week.materials %}
+                    <li class="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background-color:#e8f2ea;">
+                                <svg class="w-4 h-4" style="color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">{{ material.originalName }}</p>
+                                <p class="text-xs text-gray-400">{{ material.uploadedAt|date('M d, Y') }}</p>
+                            </div>
+                        </div>
+                        <a href="{{ asset('uploads/materials/' ~ material.filename) }}"
+                           target="_blank"
+                           class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white shrink-0 flex items-center gap-1.5"
+                           style="background-color:#0b3612;"
+                           onmouseover="this.style.backgroundColor='#5c8d67'"
+                           onmouseout="this.style.backgroundColor='#0b3612'">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            View PDF
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-sm text-gray-400 py-2 text-center">No materials uploaded for this week yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+{% endfor %}
+</div>
+
+<script>
+function toggleWeek(n) {
+    var body    = document.getElementById('week-body-' + n);
+    var chevron = document.getElementById('chevron-' + n);
+    var open    = body.style.display !== 'none';
+    body.style.display    = open ? 'none' : 'block';
+    chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+</script>
+
+{% endblock %}

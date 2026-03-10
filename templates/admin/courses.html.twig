@@ -50,6 +50,11 @@
                 <td class="px-6 py-4 text-gray-400">{{ course.createdAt|date('M d, Y') }}</td>
                 <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
+                        <a href="{{ path('app_admin_course_students', {id: course.id}) }}"
+                           class="text-xs font-medium px-3 py-1.5 rounded-lg text-white transition"
+                           style="background-color:#5c8d67;"
+                           onmouseover="this.style.backgroundColor='#0b3612'"
+                           onmouseout="this.style.backgroundColor='#5c8d67'">Students</a>
                         <a href="{{ path('app_admin_courses_edit', {id: course.id}) }}"
                            class="text-xs font-medium hover:underline" style="color:#0b3612;">Edit</a>
                         <form method="post" action="{{ path('app_admin_courses_delete', {id: course.id}) }}">

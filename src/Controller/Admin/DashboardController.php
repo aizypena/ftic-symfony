@@ -101,6 +101,60 @@ class DashboardController extends AbstractController
         return $this->redirectToRoute('app_admin_courses');
     }
 
+    #[Route('/courses/{id}/students', name: 'app_admin_course_students')]
+    public function courseStudents(Course $course, UserRepository $userRepo): Response
+    {
+        $enrolled = $course->getStudents();
+        $enrolledIds = array_map(fn($s) => $s->getId(), $enrolled->toArray());
+
+        $available = array_filter(
+            $userRepo->findBy(['role' => 'student', 'isConfirmed' => true], ['lastName' => 'ASC']),
+            fn($s) => !in_array($s->getId(), $enrolledIds)
+        );
+
+        return $this->render('admin/course_students.html.twig', [
+            'user'      => $this->getUser(),
+            'course'    => $course,
+            'enrolled'  => $enrolled,
+            'available' => array_values($available),
+        ]);
+    }
+
+    #[Route('/courses/{id}/students/add', name: 'app_admin_course_student_add', methods: ['POST'])]
+    public function courseStudentAdd(Course $course, Request $request, EntityManagerInterface $em, UserRepository $userRepo): Response
+    {
+        if ($this->isCsrfTokenValid('add-student-' . $course->getId(), $request->request->get('_token'))) {
+            $studentIds = $request->request->all('student_ids');
+            $enrolled   = 0;
+            foreach ($studentIds as $studentId) {
+                $student = $userRepo->find((int) $studentId);
+                if ($student && $student->getRole() === 'student' && !$course->hasStudent($student)) {
+                    $course->addStudent($student);
+                    $enrolled++;
+                }
+            }
+            if ($enrolled > 0) {
+                $em->flush();
+                $this->addFlash('success', $enrolled . ' student' . ($enrolled > 1 ? 's' : '') . ' enrolled in ' . $course->getName() . '.');
+            }
+        }
+        return $this->redirectToRoute('app_admin_course_students', ['id' => $course->getId()]);
+    }
+
+    #[Route('/courses/{id}/students/{studentId}/remove', name: 'app_admin_course_student_remove', methods: ['POST'])]
+    public function courseStudentRemove(Course $course, int $studentId, Request $request, EntityManagerInterface $em, UserRepository $userRepo): Response
+    {
+        if ($this->isCsrfTokenValid('remove-student-' . $course->getId() . '-' . $studentId, $request->request->get('_token'))) {
+            $student = $userRepo->find($studentId);
+            if ($student) {
+                $course->removeStudent($student);
+                $em->flush();
+                $this->addFlash('success', $student->getDisplayName() . ' removed from ' . $course->getName() . '.');
+            }
+        }
+        return $this->redirectToRoute('app_admin_course_students', ['id' => $course->getId()]);
+    }
+
     // ── Users CRUD ───────────────────────────────────────────────────────────
 
     #[Route('/users', name: 'app_admin_users')]

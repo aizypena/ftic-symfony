@@ -1,0 +1,175 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Manage Students – {{ course.name }} – FTIC Admin{% endblock %}
+
+{% block body %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ course.name }}</h1>
+        <p class="text-sm text-gray-500 mt-1">Manage enrolled students for this course</p>
+    </div>
+    <a href="{{ path('app_admin_courses') }}"
+       class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Courses
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {# ── Left: Enrolled Students ── #}
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full" style="background-color:#0b3612;"></span>
+                <h2 class="text-base font-semibold text-gray-900">Enrolled Students</h2>
+                <span class="ml-auto text-xs text-gray-400">{{ enrolled|length }} student{{ enrolled|length != 1 ? 's' : '' }}</span>
+            </div>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
+                        <th class="px-6 py-3 font-medium">Name</th>
+                        <th class="px-6 py-3 font-medium">Email</th>
+                        <th class="px-6 py-3 font-medium">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for student in enrolled %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 font-medium text-gray-900">{{ student.fullName ?: '—' }}</td>
+                        <td class="px-6 py-4 text-gray-500">{{ student.email }}</td>
+                        <td class="px-6 py-4">
+                            <form method="post" action="{{ path('app_admin_course_student_remove', {id: course.id, studentId: student.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('remove-student-' ~ course.id ~ '-' ~ student.id) }}">
+                                <button type="button"
+                                        onclick="openConfirmModal(this.closest('form'), 'Remove {{ student.displayName|e('html_attr') }} from this course?', 'Remove Student')"
+                                        class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition">
+                                    Remove
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="px-6 py-10 text-center">
+                            <div class="flex flex-col items-center text-gray-400">
+                                <svg class="w-10 h-10 mb-2 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <p class="text-sm font-medium">No students enrolled yet</p>
+                                <p class="text-xs mt-1">Use the panel on the right to enroll students</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ── Right: Enroll a Student ── #}
+    <div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">Enroll a Student</h2>
+
+            {% if available|length > 0 %}
+            <form method="post" action="{{ path('app_admin_course_student_add', {id: course.id}) }}" class="space-y-4">
+                <input type="hidden" name="_token" value="{{ csrf_token('add-student-' ~ course.id) }}">
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Select Students</label>
+
+                    {# Custom checkbox dropdown #}
+                    <div class="relative" id="student-dropdown">
+
+                        {# Trigger button #}
+                        <button type="button"
+                                onclick="toggleStudentDropdown()"
+                                class="w-full flex items-center justify-between px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-left focus:outline-none focus:ring-2"
+                                id="student-dropdown-btn">
+                            <span id="student-dropdown-label" class="text-gray-400">— Choose students —</span>
+                            <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform duration-150" id="student-dropdown-chevron"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        {# Dropdown panel #}
+                        <div id="student-dropdown-panel"
+                             style="display:none; position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:220px; overflow-y:auto; background:#fff; border:1px solid #e5e7eb; border-radius:0.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+                            {% for student in available %}
+                            <label class="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition"
+                                   onclick="event.stopPropagation()">
+                                <input type="checkbox"
+                                       name="student_ids[]"
+                                       value="{{ student.id }}"
+                                       onchange="updateStudentLabel()"
+                                       class="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                       style="accent-color:#0b3612;">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-gray-800 truncate">{{ student.displayName }}</p>
+                                    <p class="text-xs text-gray-400 truncate">{{ student.email }}</p>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2.5 text-sm font-semibold text-white rounded-lg transition"
+                        style="background-color:#0b3612;"
+                        onmouseover="this.style.backgroundColor='#5c8d67'"
+                        onmouseout="this.style.backgroundColor='#0b3612'">
+                    Enroll Selected
+                </button>
+
+                <script>
+                function toggleStudentDropdown() {
+                    var panel   = document.getElementById('student-dropdown-panel');
+                    var chevron = document.getElementById('student-dropdown-chevron');
+                    var open    = panel.style.display !== 'none';
+                    panel.style.display     = open ? 'none' : 'block';
+                    chevron.style.transform = open ? '' : 'rotate(180deg)';
+                }
+                function updateStudentLabel() {
+                    var checked = document.querySelectorAll('#student-dropdown-panel input[type=checkbox]:checked');
+                    var label   = document.getElementById('student-dropdown-label');
+                    if (checked.length === 0) {
+                        label.textContent = '— Choose students —';
+                        label.style.color = '#9ca3af';
+                    } else {
+                        label.textContent = checked.length + ' student' + (checked.length > 1 ? 's' : '') + ' selected';
+                        label.style.color = '#111827';
+                    }
+                }
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    var dropdown = document.getElementById('student-dropdown');
+                    if (dropdown && !dropdown.contains(e.target)) {
+                        document.getElementById('student-dropdown-panel').style.display = 'none';
+                        document.getElementById('student-dropdown-chevron').style.transform = '';
+                    }
+                });
+                </script>
+            </form>
+            {% else %}
+            <div class="text-center py-6 text-gray-400">
+                <svg class="w-10 h-10 mx-auto mb-2 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"/>
+                </svg>
+                <p class="text-sm font-medium">All confirmed students are already enrolled</p>
+            </div>
+            {% endif %}
+
+            <div class="mt-5 pt-5 border-t border-gray-100 text-xs text-gray-400">
+                Only confirmed student accounts appear here.
+                <a href="{{ path('app_admin_applications') }}" class="underline" style="color:#0b3612;">Manage applications →</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

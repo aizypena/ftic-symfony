@@ -39,10 +39,15 @@ class Course
     #[ORM\OrderBy(['weekNumber' => 'ASC'])]
     private Collection $weeks;
 
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'course_student')]
+    private Collection $students;
+
     public function __construct()
     {
         $this->materials = new ArrayCollection();
         $this->weeks     = new ArrayCollection();
+        $this->students  = new ArrayCollection();
     }
 
     #[ORM\PrePersist]
@@ -72,6 +77,28 @@ class Course
 
     /** @return Collection<int, CourseWeek> */
     public function getWeeks(): Collection { return $this->weeks; }
+
+    /** @return Collection<int, User> */
+    public function getStudents(): Collection { return $this->students; }
+
+    public function addStudent(User $student): static
+    {
+        if (!$this->students->contains($student)) {
+            $this->students->add($student);
+        }
+        return $this;
+    }
+
+    public function removeStudent(User $student): static
+    {
+        $this->students->removeElement($student);
+        return $this;
+    }
+
+    public function hasStudent(User $student): bool
+    {
+        return $this->students->contains($student);
+    }
 
     public function addWeek(CourseWeek $week): static
     {
