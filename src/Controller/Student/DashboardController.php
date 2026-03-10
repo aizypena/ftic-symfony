@@ -22,7 +22,9 @@ class DashboardController extends AbstractController
         $myCourses = $courseRepo->createQueryBuilder('c')
             ->join('c.students', 's')
             ->where('s.id = :id')
+            ->andWhere('c.status = :status')
             ->setParameter('id', $me->getId())
+            ->setParameter('status', 'active')
             ->orderBy('c.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
@@ -42,7 +44,9 @@ class DashboardController extends AbstractController
         $myCourses = $courseRepo->createQueryBuilder('c')
             ->join('c.students', 's')
             ->where('s.id = :id')
+            ->andWhere('c.status = :status')
             ->setParameter('id', $me->getId())
+            ->setParameter('status', 'active')
             ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
@@ -62,6 +66,11 @@ class DashboardController extends AbstractController
 
         if (!$course || !$course->hasStudent($me)) {
             $this->addFlash('error', 'You are not enrolled in that course.');
+            return $this->redirectToRoute('app_student_courses');
+        }
+
+        if ($course->getStatus() !== 'active') {
+            $this->addFlash('error', 'This course is currently unavailable.');
             return $this->redirectToRoute('app_student_courses');
         }
 
