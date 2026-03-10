@@ -3,8 +3,10 @@
 namespace App\Controller\Trainer;
 
 use App\Entity\CourseMaterial;
+use App\Entity\CourseWeek;
 use App\Form\CourseMaterialType;
 use App\Repository\CourseRepository;
+use App\Repository\CourseWeekRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,6 +43,7 @@ class DashboardController extends AbstractController
     public function courseView(
         int $id,
         CourseRepository $courseRepository,
+        CourseWeekRepository $weekRepository,
         Request $request,
         EntityManagerInterface $em,
         SluggerInterface $slugger
@@ -52,39 +55,56 @@ class DashboardController extends AbstractController
             throw $this->createAccessDeniedException('Course not found or not assigned to you.');
         }
 
+        // Ensure weeks 1-14 exist for this course
+        $weeks = [];
+        for ($w = 1; $w <= 14; $w++) {
+            $week = $weekRepository->findOneBy(['course' => $course, 'weekNumber' => $w]);
+            if (!$week) {
+                $week = new CourseWeek();
+                $week->setCourse($course)
+                     ->setWeekNumber($w)
+                     ->setTitle('Week ' . $w);
+                $em->persist($week);
+            }
+            $weeks[$w] = $week;
+        }
+        $em->flush();
+
         $uploadForm = $this->createForm(CourseMaterialType::class);
         $uploadForm->handleRequest($request);
 
         if ($uploadForm->isSubmitted() && $uploadForm->isValid()) {
-            $file = $uploadForm->get('file')->getData();
+            $file    = $uploadForm->get('file')->getData();
+            $weekNum = max(1, min(14, (int) $request->request->get('week_number', 1)));
+
             if ($file) {
                 $uploadDir = $this->getParameter('materials_upload_dir');
-
-                // Ensure directory exists
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0775, true);
                 }
 
                 $originalName = $file->getClientOriginalName();
-                $safeBase = $slugger->slug(pathinfo($originalName, PATHINFO_FILENAME));
-                $storedName = $safeBase . '-' . uniqid() . '.pdf';
+                $safeBase     = $slugger->slug(pathinfo($originalName, PATHINFO_FILENAME));
+                $storedName   = $safeBase . '-' . uniqid() . '.pdf';
                 $file->move($uploadDir, $storedName);
 
                 $material = new CourseMaterial();
-                $material->setCourse($course);
-                $material->setFilename($storedName);
-                $material->setOriginalName($originalName);
+                $material->setCourse($course)
+                         ->setWeek($weeks[$weekNum])
+                         ->setFilename($storedName)
+                         ->setOriginalName($originalName);
                 $em->persist($material);
                 $em->flush();
 
-                $this->addFlash('success', 'PDF uploaded successfully.');
-                return $this->redirectToRoute('app_trainer_course_view', ['id' => $id]);
+                $this->addFlash('success', 'PDF uploaded to Week ' . $weekNum . ' successfully.');
+                return $this->redirectToRoute('app_trainer_course_view', ['id' => $id, '_fragment' => 'week-' . $weekNum]);
             }
         }
 
         return $this->render('trainer/course_view.html.twig', [
-            'user' => $trainer,
-            'course' => $course,
+            'user'       => $trainer,
+            'course'     => $course,
+            'weeks'      => $weeks,
             'uploadForm' => $uploadForm,
         ]);
     }
@@ -93,7 +113,7 @@ class DashboardController extends AbstractController
     public function toggleStatus(int $id, CourseRepository $courseRepository, EntityManagerInterface $em, Request $request): Response
     {
         $trainer = $this->getUser();
-        $course = $courseRepository->find($id);
+        $course  = $courseRepository->find($id);
 
         if (!$course || $course->getTrainer() !== $trainer) {
             throw $this->createAccessDeniedException();
@@ -114,7 +134,7 @@ class DashboardController extends AbstractController
     public function materialDelete(int $id, EntityManagerInterface $em, Request $request): Response
     {
         $material = $em->find(CourseMaterial::class, $id);
-        $trainer = $this->getUser();
+        $trainer  = $this->getUser();
 
         if (!$material || $material->getCourse()->getTrainer() !== $trainer) {
             throw $this->createAccessDeniedException();
@@ -124,11 +144,11 @@ class DashboardController extends AbstractController
             throw $this->createAccessDeniedException('Invalid CSRF token.');
         }
 
+        $weekNum  = $material->getWeek()?->getWeekNumber() ?? 1;
         $courseId = $material->getCourse()->getId();
 
-        // Remove file from disk
         $uploadDir = $this->getParameter('materials_upload_dir');
-        $filePath = $uploadDir . '/' . $material->getFilename();
+        $filePath  = $uploadDir . '/' . $material->getFilename();
         if (file_exists($filePath)) {
             unlink($filePath);
         }
@@ -137,7 +157,33 @@ class DashboardController extends AbstractController
         $em->flush();
 
         $this->addFlash('success', 'PDF deleted.');
-        return $this->redirectToRoute('app_trainer_course_view', ['id' => $courseId]);
+        return $this->redirectToRoute('app_trainer_course_view', ['id' => $courseId, '_fragment' => 'week-' . $weekNum]);
+    }
+
+    #[Route('/weeks/{id}/update', name: 'app_trainer_week_update', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function weekUpdate(int $id, EntityManagerInterface $em, Request $request): Response
+    {
+        $week    = $em->find(CourseWeek::class, $id);
+        $trainer = $this->getUser();
+
+        if (!$week || $week->getCourse()->getTrainer() !== $trainer) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('week-update-' . $id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
+        $title = trim($request->request->get('title', ''));
+        $week->setTitle($title !== '' ? $title : 'Week ' . $week->getWeekNumber());
+        $week->setDescription(trim($request->request->get('description', '')) ?: null);
+        $em->flush();
+
+        $weekNum  = $week->getWeekNumber();
+        $courseId = $week->getCourse()->getId();
+
+        $this->addFlash('success', 'Week ' . $weekNum . ' updated.');
+        return $this->redirectToRoute('app_trainer_course_view', ['id' => $courseId, '_fragment' => 'week-' . $weekNum]);
     }
 
     #[Route('/submissions', name: 'app_trainer_submissions')]

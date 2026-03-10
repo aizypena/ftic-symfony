@@ -35,9 +35,14 @@ class Course
     #[ORM\OneToMany(mappedBy: 'course', targetEntity: CourseMaterial::class, cascade: ['persist', 'remove'])]
     private Collection $materials;
 
+    #[ORM\OneToMany(mappedBy: 'course', targetEntity: CourseWeek::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['weekNumber' => 'ASC'])]
+    private Collection $weeks;
+
     public function __construct()
     {
         $this->materials = new ArrayCollection();
+        $this->weeks     = new ArrayCollection();
     }
 
     #[ORM\PrePersist]
@@ -64,4 +69,16 @@ class Course
 
     /** @return Collection<int, CourseMaterial> */
     public function getMaterials(): Collection { return $this->materials; }
+
+    /** @return Collection<int, CourseWeek> */
+    public function getWeeks(): Collection { return $this->weeks; }
+
+    public function addWeek(CourseWeek $week): static
+    {
+        if (!$this->weeks->contains($week)) {
+            $this->weeks->add($week);
+            $week->setCourse($this);
+        }
+        return $this;
+    }
 }

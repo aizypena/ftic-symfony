@@ -18,6 +18,10 @@ class CourseMaterial
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Course $course;
 
+    #[ORM\ManyToOne(targetEntity: CourseWeek::class, inversedBy: 'materials')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?CourseWeek $week = null;
+
     /** Stored filename on disk (uuid-based) */
     #[ORM\Column(length: 255)]
     private string $filename = '';
@@ -39,6 +43,9 @@ class CourseMaterial
 
     public function getCourse(): Course { return $this->course; }
     public function setCourse(Course $course): static { $this->course = $course; return $this; }
+
+    public function getWeek(): ?CourseWeek { return $this->week; }
+    public function setWeek(?CourseWeek $week): static { $this->week = $week; return $this; }
 
     public function getFilename(): string { return $this->filename; }
     public function setFilename(string $filename): static { $this->filename = $filename; return $this; }
