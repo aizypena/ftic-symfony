@@ -2,6 +2,7 @@
 
 namespace App\Controller\Student;
 
+use App\Repository\AnnouncementRepository;
 use App\Repository\CourseRepository;
 use App\Repository\CourseWeekRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,7 +15,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class DashboardController extends AbstractController
 {
     #[Route('/dashboard', name: 'app_student_dashboard')]
-    public function index(CourseRepository $courseRepo): Response
+    public function index(CourseRepository $courseRepo, AnnouncementRepository $annRepo): Response
     {
         /** @var \App\Entity\User $me */
         $me = $this->getUser();
@@ -29,9 +30,16 @@ class DashboardController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        $announcements = $annRepo->createQueryBuilder('a')
+            ->where('a.isDeleted = false')
+            ->orderBy('a.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
         return $this->render('student/dashboard.html.twig', [
-            'user'      => $me,
-            'myCourses' => $myCourses,
+            'user'          => $me,
+            'myCourses'     => $myCourses,
+            'announcements' => $announcements,
         ]);
     }
 

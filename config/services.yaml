@@ -8,6 +8,7 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     materials_upload_dir: '%kernel.project_dir%/public/uploads/materials'
+    announcements_upload_dir: '%kernel.project_dir%/public/uploads/announcements'
 
 services:
     # default configuration for services in *this* file

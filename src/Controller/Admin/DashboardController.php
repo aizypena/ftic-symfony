@@ -2,10 +2,12 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Announcement;
 use App\Entity\Course;
 use App\Entity\User;
 use App\Form\CourseType;
 use App\Form\UserType;
+use App\Repository\AnnouncementRepository;
 use App\Repository\CourseRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,20 +23,104 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class DashboardController extends AbstractController
 {
     #[Route('/dashboard', name: 'app_admin_dashboard')]
-    public function index(UserRepository $userRepo, CourseRepository $courseRepo): Response
+    public function index(UserRepository $userRepo, CourseRepository $courseRepo, AnnouncementRepository $announcementRepo): Response
     {
         $totalUsers    = $userRepo->count([]);
         $totalCourses  = $courseRepo->count([]);
         $pendingCount  = $userRepo->count(['role' => 'student', 'isConfirmed' => false]);
         $recentApps    = $userRepo->findBy(['role' => 'student', 'isConfirmed' => false], ['id' => 'DESC'], 5);
+        $announcements = $announcementRepo->findBy(['isDeleted' => false], ['id' => 'DESC']);
 
         return $this->render('admin/dashboard.html.twig', [
-            'user'         => $this->getUser(),
-            'totalUsers'   => $totalUsers,
-            'totalCourses' => $totalCourses,
-            'pendingCount' => $pendingCount,
-            'recentApps'   => $recentApps,
+            'user'          => $this->getUser(),
+            'totalUsers'    => $totalUsers,
+            'totalCourses'  => $totalCourses,
+            'pendingCount'  => $pendingCount,
+            'recentApps'    => $recentApps,
+            'announcements' => $announcements,
         ]);
+    }
+
+    #[Route('/announcements/create', name: 'app_admin_announcement_create', methods: ['POST'])]
+    public function announcementCreate(Request $request, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('announcement-create', $request->request->get('_token'))) {
+            $title   = trim($request->request->get('title', ''));
+            $content = trim($request->request->get('content', ''));
+            if ($title && $content) {
+                $announcement = (new Announcement())
+                    ->setTitle($title)
+                    ->setContent($content)
+                    ->setPostedBy($this->getUser());
+
+                $imageFile = $request->files->get('image');
+                if ($imageFile) {
+                    $uploadDir = $this->getParameter('announcements_upload_dir');
+                    if (!is_dir($uploadDir)) { mkdir($uploadDir, 0775, true); }
+                    $ext        = $imageFile->guessExtension() ?: 'jpg';
+                    $filename   = uniqid('ann-') . '.' . $ext;
+                    $imageFile->move($uploadDir, $filename);
+                    $announcement->setImageFilename($filename);
+                }
+
+                $em->persist($announcement);
+                $em->flush();
+                $this->addFlash('success', 'Announcement posted.');
+            }
+        }
+        return $this->redirectToRoute('app_admin_dashboard');
+    }
+
+    #[Route('/announcements/{id}/delete', name: 'app_admin_announcement_delete', methods: ['POST'])]
+    public function announcementDelete(int $id, AnnouncementRepository $repo, EntityManagerInterface $em, Request $request): Response
+    {
+        $announcement = $repo->find($id);
+        if ($announcement && $this->isCsrfTokenValid('announcement-delete-' . $id, $request->request->get('_token'))) {
+            $announcement->setIsDeleted(true);
+            $em->flush();
+            $this->addFlash('success', 'Announcement deleted.');
+        }
+        return $this->redirectToRoute('app_admin_dashboard');
+    }
+
+    #[Route('/announcements/{id}/edit', name: 'app_admin_announcement_edit', methods: ['POST'])]
+    public function announcementEdit(int $id, AnnouncementRepository $repo, EntityManagerInterface $em, Request $request): Response
+    {
+        $announcement = $repo->find($id);
+        if ($announcement && $this->isCsrfTokenValid('announcement-edit-' . $id, $request->request->get('_token'))) {
+            $title   = trim($request->request->get('title', ''));
+            $content = trim($request->request->get('content', ''));
+            if ($title && $content) {
+                $announcement->setTitle($title)->setContent($content);
+
+                // Remove existing image if requested
+                if ($request->request->get('remove_image') === '1' && $announcement->getImageFilename()) {
+                    $oldPath = $this->getParameter('announcements_upload_dir') . '/' . $announcement->getImageFilename();
+                    if (file_exists($oldPath)) { unlink($oldPath); }
+                    $announcement->setImageFilename(null);
+                }
+
+                // Upload new image if provided
+                $imageFile = $request->files->get('image');
+                if ($imageFile) {
+                    // Delete old file first
+                    if ($announcement->getImageFilename()) {
+                        $oldPath = $this->getParameter('announcements_upload_dir') . '/' . $announcement->getImageFilename();
+                        if (file_exists($oldPath)) { unlink($oldPath); }
+                    }
+                    $uploadDir = $this->getParameter('announcements_upload_dir');
+                    if (!is_dir($uploadDir)) { mkdir($uploadDir, 0775, true); }
+                    $ext      = $imageFile->guessExtension() ?: 'jpg';
+                    $filename = uniqid('ann-') . '.' . $ext;
+                    $imageFile->move($uploadDir, $filename);
+                    $announcement->setImageFilename($filename);
+                }
+
+                $em->flush();
+                $this->addFlash('success', 'Announcement updated.');
+            }
+        }
+        return $this->redirectToRoute('app_admin_dashboard');
     }
 
     #[Route('/applications', name: 'app_admin_applications')]
