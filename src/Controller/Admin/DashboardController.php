@@ -21,10 +21,19 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class DashboardController extends AbstractController
 {
     #[Route('/dashboard', name: 'app_admin_dashboard')]
-    public function index(): Response
+    public function index(UserRepository $userRepo, CourseRepository $courseRepo): Response
     {
+        $totalUsers    = $userRepo->count([]);
+        $totalCourses  = $courseRepo->count([]);
+        $pendingCount  = $userRepo->count(['role' => 'student', 'isConfirmed' => false]);
+        $recentApps    = $userRepo->findBy(['role' => 'student', 'isConfirmed' => false], ['id' => 'DESC'], 5);
+
         return $this->render('admin/dashboard.html.twig', [
-            'user' => $this->getUser(),
+            'user'         => $this->getUser(),
+            'totalUsers'   => $totalUsers,
+            'totalCourses' => $totalCourses,
+            'pendingCount' => $pendingCount,
+            'recentApps'   => $recentApps,
         ]);
     }
 
