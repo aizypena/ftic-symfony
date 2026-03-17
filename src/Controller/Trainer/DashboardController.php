@@ -4,9 +4,11 @@ namespace App\Controller\Trainer;
 
 use App\Entity\CourseMaterial;
 use App\Entity\CourseWeek;
+use App\Entity\TrainerEvent;
 use App\Form\CourseMaterialType;
 use App\Repository\CourseRepository;
 use App\Repository\CourseWeekRepository;
+use App\Repository\TrainerEventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -144,7 +146,8 @@ class DashboardController extends AbstractController
             throw $this->createAccessDeniedException('Invalid CSRF token.');
         }
 
-        $weekNum  = $material->getWeek()?->getWeekNumber() ?? 1;
+        $week = $material->getWeek();
+        $weekNum  = $week ? $week->getWeekNumber() : 1;
         $courseId = $material->getCourse()->getId();
 
         $uploadDir = $this->getParameter('materials_upload_dir');
@@ -195,10 +198,187 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/calendar', name: 'app_trainer_calendar')]
-    public function calendar(): Response
+    public function calendar(Request $request, TrainerEventRepository $eventRepository): Response
     {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+
+        $year = max(2000, min(2100, (int) $request->query->get('year', (int) (new \DateTimeImmutable('now'))->format('Y'))));
+        $month = max(1, min(12, (int) $request->query->get('month', (int) (new \DateTimeImmutable('now'))->format('n'))));
+        $monthStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $year, $month));
+        $calendarStart = $monthStart->modify('-' . $monthStart->format('w') . ' days');
+        $calendarEnd = $calendarStart->modify('+41 days')->setTime(23, 59, 59);
+
+        $events = $eventRepository->findForRange($trainer, $calendarStart, $calendarEnd);
+        $eventsByDate = [];
+        foreach ($events as $event) {
+            $startsAt = $event->getStartsAt();
+            if (!$startsAt) {
+                continue;
+            }
+
+            $eventsByDate[$startsAt->format('Y-m-d')][] = $event;
+        }
+
+        $days = [];
+        $todayKey = (new \DateTimeImmutable('today'))->format('Y-m-d');
+        for ($i = 0; $i < 42; $i++) {
+            $date = $calendarStart->modify('+' . $i . ' days');
+            $dateKey = $date->format('Y-m-d');
+            $days[] = [
+                'date' => $date,
+                'dateKey' => $dateKey,
+                'inMonth' => $date->format('n') === $monthStart->format('n'),
+                'isToday' => $dateKey === $todayKey,
+                'events' => $eventsByDate[$dateKey] ?? [],
+            ];
+        }
+
+        $prevMonth = $monthStart->modify('-1 month');
+        $nextMonth = $monthStart->modify('+1 month');
+
         return $this->render('trainer/calendar.html.twig', [
-            'user' => $this->getUser(),
+            'user' => $trainer,
+            'monthLabel' => $monthStart->format('F Y'),
+            'currentYear' => (int) $monthStart->format('Y'),
+            'currentMonth' => (int) $monthStart->format('n'),
+            'prevYear' => (int) $prevMonth->format('Y'),
+            'prevMonth' => (int) $prevMonth->format('n'),
+            'nextYear' => (int) $nextMonth->format('Y'),
+            'nextMonth' => (int) $nextMonth->format('n'),
+            'days' => $days,
+            'monthEvents' => $events,
         ]);
+    }
+
+    #[Route('/calendar/events/create', name: 'app_trainer_calendar_event_create', methods: ['POST'])]
+    public function calendarEventCreate(Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('trainer-event-create', $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
+        $event = new TrainerEvent();
+        $event->setTrainer($trainer);
+
+        if (!$this->applyCalendarEventData($event, $request)) {
+            return $this->redirectToRoute('app_trainer_calendar', $this->getCalendarRedirectParams($request));
+        }
+
+        $em->persist($event);
+        $em->flush();
+
+        $this->addFlash('success', 'Event added to your calendar.');
+
+        return $this->redirectToRoute('app_trainer_calendar', $this->getCalendarRedirectParams($request));
+    }
+
+    #[Route('/calendar/events/{id}/edit', name: 'app_trainer_calendar_event_edit', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function calendarEventEdit(int $id, Request $request, TrainerEventRepository $eventRepository, EntityManagerInterface $em): Response
+    {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+        $event = $eventRepository->find($id);
+
+        if (!$event || $event->getTrainer() !== $trainer) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('trainer-event-edit-' . $id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
+        if (!$this->applyCalendarEventData($event, $request)) {
+            return $this->redirectToRoute('app_trainer_calendar', $this->getCalendarRedirectParams($request));
+        }
+
+        $em->flush();
+        $this->addFlash('success', 'Calendar event updated.');
+
+        return $this->redirectToRoute('app_trainer_calendar', $this->getCalendarRedirectParams($request));
+    }
+
+    #[Route('/calendar/events/{id}/delete', name: 'app_trainer_calendar_event_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function calendarEventDelete(int $id, Request $request, TrainerEventRepository $eventRepository, EntityManagerInterface $em): Response
+    {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+        $event = $eventRepository->find($id);
+
+        if (!$event || $event->getTrainer() !== $trainer) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('trainer-event-delete-' . $id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
+        $em->remove($event);
+        $em->flush();
+
+        $this->addFlash('success', 'Calendar event deleted.');
+
+        return $this->redirectToRoute('app_trainer_calendar', $this->getCalendarRedirectParams($request));
+    }
+
+    private function applyCalendarEventData(TrainerEvent $event, Request $request): bool
+    {
+        $title = trim((string) $request->request->get('title', ''));
+        $description = trim((string) $request->request->get('description', ''));
+        $eventDate = (string) $request->request->get('event_date', '');
+        
+        $startTime = (string) $request->request->get('start_time', '');
+        $endTime = (string) $request->request->get('end_time', '');
+
+        if ($title === '' || $eventDate === '') {
+            $this->addFlash('error', 'Title and date are required.');
+            return false;
+        }
+
+        if ($startTime === '') {
+            $startTime = '00:00';
+            if ($endTime === '') {
+                $endTime = '23:59';
+            }
+        }
+
+        $startsAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $eventDate . ' ' . $startTime);
+        if (!$startsAt) {
+            $this->addFlash('error', 'Invalid event date or time.');
+            return false;
+        }
+
+        $endsAt = null;
+        if ($endTime !== '') {
+            $endsAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $eventDate . ' ' . $endTime);
+            if (!$endsAt) {
+                $this->addFlash('error', 'Invalid end time.');
+                return false;
+            }
+
+            if ($endsAt < $startsAt) {
+                $this->addFlash('error', 'End time must be after the start time.');
+                return false;
+            }
+        }
+
+        $event
+            ->setTitle($title)
+            ->setDescription($description !== '' ? $description : null)
+            ->setStartsAt($startsAt)
+            ->setEndsAt($endsAt);
+
+        return true;
+    }
+
+    private function getCalendarRedirectParams(Request $request): array
+    {
+        return [
+            'year' => max(2000, min(2100, (int) $request->request->get('year', $request->query->get('year', (int) date('Y'))))),
+            'month' => max(1, min(12, (int) $request->request->get('month', $request->query->get('month', (int) date('n'))))),
+        ];
     }
 }
