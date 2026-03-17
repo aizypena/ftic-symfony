@@ -32,6 +32,15 @@ class CourseWeek
     #[ORM\OrderBy(['originalName' => 'ASC'])]
     private Collection $materials;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isSubmissionRequired = false;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    private int $maxFiles = 1;
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $allowedFileTypes = null;
+
     public function __construct()
     {
         $this->materials = new ArrayCollection();
@@ -53,4 +62,13 @@ class CourseWeek
 
     /** @return Collection<int, CourseMaterial> */
     public function getMaterials(): Collection { return $this->materials; }
+
+    public function isSubmissionRequired(): bool { return $this->isSubmissionRequired; }
+    public function setIsSubmissionRequired(bool $isSubmissionRequired): static { $this->isSubmissionRequired = $isSubmissionRequired; return $this; }
+
+    public function getMaxFiles(): int { return $this->maxFiles; }
+    public function setMaxFiles(int $maxFiles): static { $this->maxFiles = $maxFiles; return $this; }
+
+    public function getAllowedFileTypes(): ?array { return $this->allowedFileTypes; }
+    public function setAllowedFileTypes(?array $allowedFileTypes): static { $this->allowedFileTypes = $allowedFileTypes; return $this; }
 }

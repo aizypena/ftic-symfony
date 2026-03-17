@@ -20,17 +20,17 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">My Courses</p>
-            <p class="text-3xl font-bold text-gray-900">—</p>
+            <p class="text-3xl font-bold text-gray-900">{{ myCoursesCount }}</p>
             <p class="text-xs text-gray-400 mt-1">Active courses</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">My Students</p>
-            <p class="text-3xl font-bold text-gray-900">—</p>
+            <p class="text-3xl font-bold text-gray-900">{{ myStudentsCount }}</p>
             <p class="text-xs text-gray-400 mt-1">Enrolled in your courses</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Pending Reviews</p>
-            <p class="text-3xl font-bold text-gray-900">—</p>
+            <p class="text-3xl font-bold text-gray-900">{{ pendingReviewsCount }}</p>
             <p class="text-xs text-gray-400 mt-1">Submissions to grade</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -45,33 +45,47 @@
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 class="text-base font-semibold text-gray-900 mb-4">Quick Actions</h2>
             <ul class="space-y-2">
-                <li><a href="#" class="flex items-center gap-3 text-sm text-gray-700 hover:text-feu-dark hover:bg-feu-pale rounded-lg px-3 py-2.5 transition group">
+                <li><a href="{{ path('app_trainer_courses') }}" class="flex items-center gap-3 text-sm text-gray-700 hover:text-feu-dark hover:bg-feu-pale rounded-lg px-3 py-2.5 transition group">
                     <svg class="w-4 h-4 text-gray-400 group-hover:text-feu-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     Create Course
                 </a></li>
-                <li><a href="#" class="flex items-center gap-3 text-sm text-gray-700 hover:text-feu-dark hover:bg-feu-pale rounded-lg px-3 py-2.5 transition group">
+                <li><a href="{{ path('app_trainer_courses') }}" class="flex items-center gap-3 text-sm text-gray-700 hover:text-feu-dark hover:bg-feu-pale rounded-lg px-3 py-2.5 transition group">
                     <svg class="w-4 h-4 text-gray-400 group-hover:text-feu-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     View Students
                 </a></li>
-                <li><a href="#" class="flex items-center gap-3 text-sm text-gray-700 hover:text-feu-dark hover:bg-feu-pale rounded-lg px-3 py-2.5 transition group">
+                <li><a href="{{ path('app_trainer_submissions') }}" class="flex items-center gap-3 text-sm text-gray-700 hover:text-feu-dark hover:bg-feu-pale rounded-lg px-3 py-2.5 transition group">
                     <svg class="w-4 h-4 text-gray-400 group-hover:text-feu-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Grade Submissions
-                </a></li>
-                <li><a href="#" class="flex items-center gap-3 text-sm text-gray-700 hover:text-feu-dark hover:bg-feu-pale rounded-lg px-3 py-2.5 transition group">
-                    <svg class="w-4 h-4 text-gray-400 group-hover:text-feu-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    Progress Reports
                 </a></li>
             </ul>
         </div>
 
         {# My Courses #}
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:col-span-2">
-            <h2 class="text-base font-semibold text-gray-900 mb-4">My Courses</h2>
-            <div class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
-                <svg class="w-14 h-14 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                <p class="text-sm font-medium text-gray-500">No courses yet</p>
-                <p class="text-xs text-gray-400 mt-1">Create your first course to get started</p>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-semibold text-gray-900">My Courses</h2>
+                <a href="{{ path('app_trainer_courses') }}" class="text-sm font-medium text-feu hover:underline">View All</a>
             </div>
+
+            {% if courses|length > 0 %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for course in courses|slice(0, 4) %}
+                        <a href="{{ path('app_trainer_course_view', { id: course.id }) }}" class="block border border-gray-100 rounded-xl p-4 hover:border-feu-light hover:shadow-sm transition group">
+                            <h3 class="font-bold text-gray-900 group-hover:text-feu-dark mb-1">{{ course.name }}</h3>
+                            <p class="text-sm text-gray-500 line-clamp-2 mb-3">{{ course.description }}</p>
+                            <div class="flex items-center justify-between mt-auto">
+                                <span class="text-xs font-medium bg-gray-50 text-gray-600 px-2 py-1 rounded-md">{{ course.students|length }} Students</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
+                    <svg class="w-14 h-14 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    <p class="text-sm font-medium text-gray-500">No courses yet</p>
+                    <p class="text-xs text-gray-400 mt-1">Create your first course to get started</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -28,17 +28,173 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td colspan="5" class="px-6 py-12 text-center">
-                    <div class="flex flex-col items-center text-gray-400">
-                        <svg class="w-12 h-12 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <p class="text-sm font-medium">No submissions yet</p>
-                    </div>
-                </td>
-            </tr>
+            {% for sub in submissions %}
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-white uppercase" style="background-color:#5c8d67;">
+                                {{ sub.student.name|default('S')|slice(0, 2) }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ sub.student.name|default(sub.student.email) }}</p>
+                                <p class="text-xs text-gray-500">{{ sub.student.email }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm font-medium text-gray-900">{{ sub.courseWeek.course.name }}</p>
+                        <p class="text-xs text-gray-500">Week {{ sub.courseWeek.weekNumber }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm text-gray-900">{{ sub.uploadedAt|date('M d, Y') }}</p>
+                        <p class="text-xs text-gray-500">{{ sub.uploadedAt|date('h:i A') }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if sub.status == 'graded' %}
+                            <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md text-xs font-medium bg-green-50 text-green-800 border border-green-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                Graded ({{ sub.grade }}%)
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                                Pending
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <a href="{{ asset('uploads/submissions/' ~ sub.filename) }}" target="_blank" class="text-sm font-medium hover:underline flex items-center gap-1" style="color:#0b3612;" title="View File">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                View
+                            </a>
+                            <a href="{{ asset('uploads/submissions/' ~ sub.filename) }}" download="{{ sub.originalName }}" class="text-sm font-medium hover:underline flex items-center gap-1 text-gray-600 hover:text-gray-900" title="Download File">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                Download
+                            </a>
+                            <button type="button" onclick="openGradeModal({{ sub.id }}, '{{ sub.student.name|default(sub.student.email)|escape('js') }}', '{{ sub.originalName|escape('js') }}', '{{ sub.grade|default('') }}', '{{ sub.feedback|default('')|escape('js') }}')" class="text-sm font-medium hover:underline flex items-center gap-1 text-blue-600 hover:text-blue-800" title="Grade Submission">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                {% if sub.status == 'graded' %}Edit Grade{% else %}Grade{% endif %}
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center text-gray-400">
+                            <svg class="w-12 h-12 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <p class="text-sm font-medium">No submissions yet</p>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Modal for Grading -->
+<div id="gradeModal" class="fixed inset-0 z-[100] hidden items-center justify-center backdrop-blur-sm bg-gray-900/40 transition-opacity" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div style="max-width: 500px;" class="w-full relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all border border-gray-100 flex flex-col mx-4">
+        <form id="gradeForm" action="{{ path('app_trainer_submission_grade') }}" method="POST" class="flex flex-col">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white w-full">
+                <h3 class="text-lg font-bold text-gray-900" id="modal-title">Evaluate Submission</h3>
+                <button type="button" onclick="closeGradeModal()" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6 w-full">
+                <input type="hidden" name="submission_id" id="modalSubmissionId" value="">
+                
+                <!-- Student & File Context -->
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-sm font-bold text-gray-700" id="modalStudentInitials">S</div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">Student</p>
+                            <p id="modalStudentName" class="text-base font-semibold text-gray-900 truncate leading-tight"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-px bg-gray-200 w-full my-3"></div>
+                    
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">Submitted File</p>
+                            <p id="modalFileName" class="text-sm font-medium text-gray-800 truncate leading-tight"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Areas -->
+                <div class="px-1">
+                    <label for="grade" class="block text-sm font-semibold text-gray-800 mb-2 flex items-center justify-between">
+                        Score
+                        <span class="text-xs font-medium text-gray-500 bg-gray-100/80 border border-gray-200 px-2 py-0.5 rounded-md">Out of 100</span>
+                    </label>
+                    <div class="w-full sm:w-1/2">
+                        <input type="number" id="grade" name="grade" min="0" max="100" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-base font-medium text-gray-900 focus:ring-2 focus:border-transparent outline-none transition shadow-sm hover:border-gray-400" style="--tw-ring-color: #5c8d67;" placeholder="0" required>
+                    </div>
+                </div>
+                
+                <div class="px-1">
+                    <label for="feedback" class="block text-sm font-semibold text-gray-800 mb-2 flex items-center justify-between">
+                        Feedback Comments 
+                        <span class="text-xs font-medium text-gray-500 bg-gray-100/80 border border-gray-200 px-2 py-0.5 rounded-md">Optional</span>
+                    </label>
+                    <textarea id="feedback" name="feedback" rows="3" class="w-full text-sm border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:border-transparent outline-none transition resize-none leading-relaxed shadow-sm hover:border-gray-400" style="--tw-ring-color: #5c8d67;" placeholder="Provide constructive feedback..."></textarea>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3 border-t border-gray-100 w-full rounded-b-2xl">
+                <button type="button" onclick="closeGradeModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm transition cursor-pointer">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-2" style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Submit Grade
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openGradeModal(submissionId, studentName, fileName, currentGrade, currentFeedback) {
+    document.getElementById('modalSubmissionId').value = submissionId;
+    document.getElementById('modalStudentName').textContent = studentName;
+    document.getElementById('modalFileName').textContent = fileName;
+    
+    // Set form fields if already graded
+    document.getElementById('grade').value = currentGrade || '';
+    document.getElementById('feedback').value = currentFeedback || '';
+    
+    // Set initials bubble
+    const initials = studentName ? studentName.substring(0, 2).toUpperCase() : 'S';
+    document.getElementById('modalStudentInitials').textContent = initials;
+    
+    // Show modal
+    const modal = document.getElementById('gradeModal');
+    // Using display flex when open ensures the flexbox properties apply for centering
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Focus the grade input automatically
+    setTimeout(() => {
+        document.getElementById('grade').focus();
+    }, 100);
+}
+
+function closeGradeModal() {
+    const modal = document.getElementById('gradeModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.getElementById('gradeForm').reset();
+}
+</script>
 {% endblock %}

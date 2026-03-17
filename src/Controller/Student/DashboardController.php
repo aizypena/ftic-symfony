@@ -67,7 +67,7 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/courses/{id}', name: 'app_student_course_view')]
-    public function courseView(int $id, CourseRepository $courseRepo, CourseWeekRepository $weekRepo): Response
+    public function courseView(int $id, CourseRepository $courseRepo, CourseWeekRepository $weekRepo, \Doctrine\ORM\EntityManagerInterface $em): Response
     {
         /** @var \App\Entity\User $me */
         $me     = $this->getUser();
@@ -83,7 +83,7 @@ class DashboardController extends AbstractController
             return $this->redirectToRoute('app_student_courses');
         }
 
-        // Build weeks 1-14 map (same pattern as trainer controller)
+        // Build weeks 1-14 map
         $weeks = [];
         for ($w = 1; $w <= 14; $w++) {
             $week = $weekRepo->findOneBy(['course' => $course, 'weekNumber' => $w]);
@@ -92,11 +92,89 @@ class DashboardController extends AbstractController
             }
         }
 
+        $submissionsRaw = $em->getRepository(\App\Entity\StudentSubmission::class)
+            ->findBy(['student' => $me]);
+        
+        $submissionsByWeek = [];
+        foreach ($submissionsRaw as $sub) {
+            if ($sub->getCourseWeek()->getCourse() === $course) {
+                $submissionsByWeek[$sub->getCourseWeek()->getId()][] = $sub;
+            }
+        }
+
         return $this->render('student/course_view.html.twig', [
-            'user'   => $me,
-            'course' => $course,
-            'weeks'  => $weeks,
+            'user'              => $me,
+            'course'            => $course,
+            'weeks'             => $weeks,
+            'submissionsByWeek' => $submissionsByWeek,
         ]);
+    }
+
+    #[Route('/courses/{courseId}/weeks/{weekId}/upload', name: 'app_student_submission_upload', methods: ['POST'])]
+    public function uploadSubmission(
+        int $courseId,
+        int $weekId,
+        CourseRepository $courseRepo,
+        CourseWeekRepository $weekRepo,
+        Request $request,
+        \Doctrine\ORM\EntityManagerInterface $em,
+        \Symfony\Component\String\Slugger\SluggerInterface $slugger
+    ): Response {
+        /** @var \App\Entity\User $me */
+        $me = $this->getUser();
+        $course = $courseRepo->find($courseId);
+        $week = $weekRepo->find($weekId);
+
+        if (!$course || !$course->hasStudent($me) || !$week || $week->getCourse() !== $course) {
+            throw $this->createAccessDeniedException('Invalid course or week.');
+        }
+
+        if (!$week->isSubmissionRequired()) {
+            $this->addFlash('error', 'Submissions are not accepted for this week.');
+            return $this->redirectToRoute('app_student_course_view', ['id' => $courseId]);
+        }
+
+        $files = $request->files->get('submission_files');
+        if (!$files || empty($files[0])) {
+            $this->addFlash('error', 'Please select at least one file.');
+            return $this->redirectToRoute('app_student_course_view', ['id' => $courseId, '_fragment' => 'week-' . $week->getWeekNumber()]);
+        }
+
+        $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/submissions';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
+        }
+
+        $count = current($em->createQuery(
+            'SELECT COUNT(s.id) FROM App\Entity\StudentSubmission s WHERE s.student = :student AND s.courseWeek = :week'
+        )->setParameters(['student' => $me, 'week' => $week])->getResult())[1] ?? 0;
+
+        if ($count + count($files) > $week->getMaxFiles()) {
+            $this->addFlash('error', 'You cannot upload more than ' . $week->getMaxFiles() . ' file(s) for this week.');
+            return $this->redirectToRoute('app_student_course_view', ['id' => $courseId, '_fragment' => 'week-' . $week->getWeekNumber()]);
+        }
+
+        foreach ($files as $file) {
+            $originalName = $file->getClientOriginalName();
+            $safeBase = $slugger->slug(pathinfo($originalName, PATHINFO_FILENAME));
+            $storedName = $safeBase . '-' . uniqid() . '.' . $file->guessExtension();
+
+            $file->move($uploadDir, $storedName);
+
+            $submission = new \App\Entity\StudentSubmission();
+            $submission->setStudent($me)
+                       ->setCourseWeek($week)
+                       ->setOriginalName($originalName)
+                       ->setFilename($storedName)
+                       ->setUploadedAt(new \DateTimeImmutable());
+
+            $em->persist($submission);
+        }
+        
+        $em->flush();
+        $this->addFlash('success', 'Submission uploaded successfully!');
+
+        return $this->redirectToRoute('app_student_course_view', ['id' => $courseId, '_fragment' => 'week-' . $week->getWeekNumber()]);
     }
 
     #[Route('/calendar', name: 'app_student_calendar')]

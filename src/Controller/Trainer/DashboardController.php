@@ -22,10 +22,26 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 class DashboardController extends AbstractController
 {
     #[Route('/dashboard', name: 'app_trainer_dashboard')]
-    public function index(): Response
+    public function index(CourseRepository $courseRepository, EntityManagerInterface $em): Response
     {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+
+        $courses = $courseRepository->findBy(['trainer' => $trainer], ['createdAt' => 'DESC']);
+
+        $myStudentsCount = (int) $em->createQuery('
+            SELECT COUNT(DISTINCT s.id)
+            FROM App\Entity\Course c
+            JOIN c.students s
+            WHERE c.trainer = :trainer
+        ')->setParameter('trainer', $trainer)->getSingleScalarResult();
+
         return $this->render('trainer/dashboard.html.twig', [
-            'user' => $this->getUser(),
+            'user' => $trainer,
+            'myCoursesCount' => count($courses),
+            'myStudentsCount' => $myStudentsCount,
+            'pendingReviewsCount' => 0,
+            'courses' => array_slice($courses, 0, 5),
         ]);
     }
 
@@ -180,6 +196,16 @@ class DashboardController extends AbstractController
         $title = trim($request->request->get('title', ''));
         $week->setTitle($title !== '' ? $title : 'Week ' . $week->getWeekNumber());
         $week->setDescription(trim($request->request->get('description', '')) ?: null);
+
+        $isSubmissionRequired = $request->request->getBoolean('isSubmissionRequired', false);
+        $week->setIsSubmissionRequired($isSubmissionRequired);
+
+        $maxFiles = $request->request->getInt('maxFiles', 1);
+        $week->setMaxFiles(max(1, $maxFiles));
+
+        $allowedFileTypes = $request->request->all('allowedFileTypes');
+        $week->setAllowedFileTypes(is_array($allowedFileTypes) ? $allowedFileTypes : []);
+
         $em->flush();
 
         $weekNum  = $week->getWeekNumber();
@@ -190,11 +216,51 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/submissions', name: 'app_trainer_submissions')]
-    public function submissions(): Response
+    public function submissions(\Doctrine\ORM\EntityManagerInterface $em): Response
     {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+
+        $submissions = $em->createQuery('
+            SELECT s 
+            FROM App\Entity\StudentSubmission s
+            JOIN s.courseWeek w
+            JOIN w.course c
+            WHERE c.trainer = :trainer
+            ORDER BY s.uploadedAt DESC
+        ')->setParameter('trainer', $trainer)->getResult();
+
         return $this->render('trainer/submissions.html.twig', [
-            'user' => $this->getUser(),
+            'user' => $trainer,
+            'submissions' => $submissions,
         ]);
+    }
+
+    #[Route('/submissions/grade', name: 'app_trainer_submission_grade', methods: ['POST'])]
+    public function gradeSubmission(Request $request, \Doctrine\ORM\EntityManagerInterface $em): Response
+    {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+
+        $submissionId = $request->request->get('submission_id');
+        $grade = $request->request->get('grade');
+        $feedback = $request->request->get('feedback');
+
+        $submission = $em->getRepository(\App\Entity\StudentSubmission::class)->find($submissionId);
+
+        if (!$submission || $submission->getCourseWeek()->getCourse()->getTrainer() !== $trainer) {
+            throw $this->createAccessDeniedException('Invalid submission or access denied.');
+        }
+
+        $submission->setGrade((int) $grade);
+        $submission->setFeedback($feedback);
+        $submission->setStatus('graded');
+        
+        $em->flush();
+
+        $this->addFlash('success', 'Submission evaluated successfully.');
+        
+        return $this->redirectToRoute('app_trainer_submissions');
     }
 
     #[Route('/calendar', name: 'app_trainer_calendar')]

@@ -117,6 +117,138 @@
             {% else %}
                 <p class="text-sm text-gray-400 py-2 text-center">No materials uploaded for this week yet.</p>
             {% endif %}
+
+            {% if week and week.isSubmissionRequired %}
+                <div class="mt-6 border-t border-gray-100 pt-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                            <svg class="w-4 h-4" style="color:#5c8d67;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                            Assignment Submission
+                        </h4>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+                        {% set weekSubmissions = submissionsByWeek[week.id] ?? [] %}
+                        {% set totalUploaded = weekSubmissions|length %}
+                        {% set maxFiles = week.maxFiles|default(1) %}
+                        {% set canUploadMore = totalUploaded < maxFiles %}
+
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                {% if totalUploaded > 0 %}
+                                    <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        Submitted ({{ totalUploaded }}/{{ maxFiles }})
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Pending Submission
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-gray-500 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                {% if canUploadMore %}
+                                    You can upload {{ maxFiles - totalUploaded }} more file{% if (maxFiles - totalUploaded) > 1 %}s{% endif %}
+                                {% else %}
+                                    Maximum files reached
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if totalUploaded > 0 %}
+                            <div class="mb-6">
+                                <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Your Files</h5>
+                                <ul class="space-y-2.5">
+                                    {% for sub in weekSubmissions %}
+                                    <li class="flex flex-col gap-2 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow transition-shadow">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div class="flex items-center gap-3 min-w-0">
+                                                <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 {% if sub.status == 'graded' %}bg-green-50 text-green-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <p class="text-sm font-medium text-gray-900 truncate">{{ sub.originalName|default(sub.filename|default('Submission')) }}</p>
+                                                    <p class="text-xs text-gray-500 mt-0.5">Uploaded on {{ sub.uploadedAt|date('M d, Y \\a\\t h:i A') }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="shrink-0 flex items-center gap-2">
+                                                {% if sub.status == 'graded' %}
+                                                    <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold shadow-sm" style="background-color:#e8f2ea;color:#0b3612;">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                        Graded: {{ sub.grade }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold shadow-sm bg-yellow-100 text-yellow-800">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                        Pending
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if sub.status == 'graded' and sub.feedback %}
+                                            <div class="mt-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-md border border-gray-100">
+                                                <span class="font-semibold text-xs text-gray-500 uppercase block mb-1">Trainer Feedback</span>
+                                                {{ sub.feedback|nl2br }}
+                                            </div>
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <form action="{{ path('app_student_submission_upload', {courseId: course.id, weekId: week.id}) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-4 {% if not canUploadMore %}opacity-50 pointer-events-none{% endif %}">
+                            <div class="flex items-center justify-center w-full">
+                                <label for="dropzone-file-{{ week.id }}" class="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-white hover:bg-gray-50 hover:border-feu-light transition-all">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                                        <svg class="w-8 h-8 mb-3 text-gray-400 group-hover:text-feu-light transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                        </svg>
+                                        <p class="mb-1 text-sm text-gray-600"><span class="font-semibold text-gray-800">Click to browse</span> or drag and drop</p>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            {% if week.allowedFileTypes and week.allowedFileTypes|length > 0 %}
+                                                Accepts {{ week.allowedFileTypes|join(', ')|upper }}
+                                            {% else %}
+                                                Any file type accepted
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <input id="dropzone-file-{{ week.id }}" type="file" name="submission_files[]" class="hidden"
+                                        {% if week.allowedFileTypes and week.allowedFileTypes|length > 0 %}
+                                            {% set acceptParts = [] %}
+                                            {% for type in week.allowedFileTypes %}
+                                                {% if type == 'pdf' %}{% set acceptParts = acceptParts|merge(['.pdf', 'application/pdf']) %}{% endif %}
+                                                {% if type == 'word' %}{% set acceptParts = acceptParts|merge(['.doc', '.docx', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']) %}{% endif %}
+                                                {% if type == 'image' %}{% set acceptParts = acceptParts|merge(['image/*']) %}{% endif %}
+                                            {% endfor %}
+                                            accept="{{ acceptParts|join(',') }}"
+                                        {% endif %}
+                                        {% if maxFiles > 1 %}multiple{% endif %}
+                                        {% if not canUploadMore %}disabled{% endif %}
+                                    >
+                                </label>
+                            </div>
+                            
+                            <button type="submit"
+                                    class="text-sm font-semibold text-white px-5 py-2.5 rounded-lg transition w-full flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                                    style="background-color:#0b3612;"
+                                    {% if canUploadMore %}
+                                    onmouseover="this.style.backgroundColor='#5c8d67'"
+                                    onmouseout="this.style.backgroundColor='#0b3612'"
+                                    {% else %}
+                                    disabled
+                                    {% endif %}>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                Upload & Submit
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
         </div>
 
     </div>
