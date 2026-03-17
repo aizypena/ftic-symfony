@@ -33,4 +33,24 @@ class TrainerEventRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return TrainerEvent[]
+     */
+    public function findForStudentRange(User $student, \DateTimeImmutable $start, \DateTimeImmutable $end): array
+    {
+        return $this->createQueryBuilder('e')
+            ->select('DISTINCT e')
+            ->join('App\Entity\Course', 'c', 'WITH', 'c.trainer = e.trainer')
+            ->join('c.students', 's')
+            ->andWhere('s = :student')
+            ->andWhere('e.startsAt >= :start')
+            ->andWhere('e.startsAt <= :end')
+            ->setParameter('student', $student)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->orderBy('e.startsAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

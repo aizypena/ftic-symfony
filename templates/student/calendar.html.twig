@@ -3,41 +3,302 @@
 {% block title %}Calendar – FTIC Student{% endblock %}
 
 {% block body %}
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Calendar</h1>
-    <p class="text-sm text-gray-500 mt-1">Your schedule and upcoming classes</p>
-</div>
+<style>
+:root {
+    --cal-primary: #0b3612;
+    --cal-primary-strong: #0f4a1a;
+    --cal-ink: #111827;
+    --cal-muted: #6b7280;
+    --cal-border: #e5e7eb;
+    --cal-bg: #f5f6f8;
+    --cal-surface: #ffffff;
+}
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex items-center justify-between mb-6">
-        <h2 class="text-base font-semibold text-gray-900">{{ "now"|date("F Y") }}</h2>
-        <div class="flex gap-2">
-            <button class="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">&larr; Prev</button>
-            <button class="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">Next &rarr;</button>
+body {
+    background: var(--cal-bg);
+}
+
+.calendar-shell {
+    background: var(--cal-surface);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+    border: 1px solid #edf0f3;
+}
+
+.calendar-head {
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.crumb {
+    font-size: 14px;
+    color: var(--cal-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pill-group button {
+    border-radius: 999px;
+    border: 1px solid #d8dce2;
+    padding: 8px 16px;
+    font-weight: 700;
+    color: var(--cal-muted);
+    background: #fff;
+}
+
+.pill-group button.active {
+    background: var(--cal-primary);
+    border-color: var(--cal-primary);
+    color: #fff;
+}
+
+.nav-btn {
+    border: 1px solid #d8dce2;
+    background: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cal-ink);
+    transition: all 120ms ease;
+}
+
+.nav-btn:hover {
+    background: #eef2f7;
+}
+
+.filter-btn {
+    border: 1px solid #d8dce2;
+    background: #fff;
+    padding: 8px 14px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--cal-ink);
+}
+
+.weekday-head {
+    background: #e8f2ea;
+    color: var(--cal-primary-strong);
+    border-bottom: 1px solid #d1e0d3;
+    font-weight: 700;
+}
+
+.calendar-grid {
+    border-left: 1px solid var(--cal-border);
+    border-right: 1px solid var(--cal-border);
+    border-bottom: 1px solid var(--cal-border);
+}
+
+.calendar-day {
+    border-right: 1px solid var(--cal-border);
+    border-bottom: 1px solid var(--cal-border);
+    background: #fff;
+    transition: background 120ms ease;
+    padding: 14px;
+}
+
+.calendar-day:hover,
+.calendar-day:focus-within {
+    background: #f9fbff;
+}
+
+.modal-shell {
+    background: #fff;
+    border-radius: 18px;
+    padding: 28px;
+    width: 100%;
+    max-width: 580px;
+    margin: 16px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+}
+</style>
+
+<div class="mb-6 space-y-4">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-3xl font-extrabold text-gray-900">Calendar</p>
+            <div class="crumb mt-1">
+                <span>Dashboard</span>
+                <span>&rsaquo;</span>
+                <span class="text-[var(--cal-ink)] font-semibold">Calendar</span>
+            </div>
         </div>
     </div>
 
-    {# Day headers #}
-    <div class="grid grid-cols-7 mb-2">
+<div class="calendar-shell">
+    <div class="calendar-head px-6 py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex items-center gap-3">
+            <button class="nav-btn" aria-label="Previous month" onclick="location.href='{{ path('app_student_calendar', {year: prevYear, month: prevMonth}) }}'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="text-2xl font-bold text-gray-900 mx-2">{{ monthLabel }}</div>
+            <button class="nav-btn" aria-label="Next month" onclick="location.href='{{ path('app_student_calendar', {year: nextYear, month: nextMonth}) }}'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <a href="{{ path('app_student_calendar') }}" class="filter-btn ml-2">Today</a>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="pill-group flex items-center gap-2">
+                <button class="active" type="button">Month</button>
+                <button type="button" class="cursor-not-allowed opacity-50">Week</button>
+            </div>
+            <button class="filter-btn" type="button">
+                <span>All Events</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; font-size: 0.875rem;" class="weekday-head rounded-t-lg">
         {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}
-            <div class="text-center text-xs font-medium text-gray-400 uppercase py-2">{{ day }}</div>
+            <div style="padding: 12px 0; border-right: 1px solid var(--cal-border);" class="last:border-r-0">{{ day }}</div>
         {% endfor %}
     </div>
 
-    {# Placeholder grid #}
-    <div class="grid grid-cols-7 gap-1">
-        {% for i in 1..35 %}
-            <div class="aspect-square flex items-center justify-center rounded-lg text-sm text-gray-400 hover:bg-gray-50 cursor-pointer transition">
-                {{ i <= 31 ? i : '' }}
+    <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));" class="calendar-grid bg-white">
+        {% for day in days %}
+            <div style="border-right: 1px solid var(--cal-border); border-bottom: 1px solid var(--cal-border); min-height: 140px;"
+                 class="calendar-day group relative p-3 flex flex-col text-left {{ day.inMonth ? '' : 'bg-gray-50 text-gray-400' }}">
+                <div class="mb-2 relative w-full">
+                    <span class="inline-flex items-center justify-center text-sm font-semibold {{ day.isToday ? 'w-8 h-8 rounded-full text-white bg-[var(--cal-primary)]' : (day.inMonth ? 'text-gray-700' : 'text-gray-400') }}">
+                        {{ day.date|date('j') }}
+                    </span>
+                </div>
+
+                <div class="space-y-1 overflow-hidden mt-1 w-full relative z-10">
+                    {% for event in day.events|slice(0, 4) %}
+                        {% set isWholeDay = (event.startsAt|date('H:i', false) == '00:00' and (not event.endsAt or event.endsAt|date('H:i', false) == '23:59')) %}
+                        <div onclick="openModal('view-shell-{{ event.id }}')"
+                             class="w-full text-left rounded px-2 py-1 text-xs font-medium cursor-pointer border border-transparent hover:border-green-600 hover:shadow-sm transition"
+                             style="background-color: #e8f2ea; color: #0b3612; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {% if not isWholeDay %}
+                                {{ event.startsAt|date('g:ia', false) }} 
+                            {% endif %}
+                            {{ event.title }}
+                        </div>
+                    {% endfor %}
+
+                    {% if day.events|length > 4 %}
+                        <p class="text-xs font-medium text-gray-500 px-1">{{ day.events|length - 4 }} more</p>
+                    {% endif %}
+                </div>
             </div>
         {% endfor %}
     </div>
-
-    <div class="mt-6 flex flex-col items-center justify-center py-6 text-center border-t border-gray-100">
-        <svg class="w-10 h-10 mb-2 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <p class="text-sm font-medium text-gray-500">No events scheduled</p>
-    </div>
 </div>
+</div>
+
+{% for event in monthEvents %}
+    <div id="view-shell-{{ event.id }}"
+         style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
+         onclick="if(event.target===this) closeModal('view-shell-{{ event.id }}')">
+        <div class="modal-shell">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                <h3 style="font-size:16px; font-weight:700; color:#111827; margin:0;">Event Details</h3>
+                <button type="button" onclick="closeModal('view-shell-{{ event.id }}')"
+                        style="width:32px; height:32px; border-radius:8px; border:none; background:#f3f4f6; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#6b7280;"
+                        onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Title</label>
+                    <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                        {{ event.title }}
+                    </div>
+                </div>
+
+                {% set isWholeDayEvent = (event.startsAt|date('H:i', false) == '00:00' and event.endsAt and event.endsAt|date('H:i', false) == '23:59') %}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Date</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            {{ event.startsAt|date('M j, Y', false) }}
+                        </div>
+                    </div>
+                    {% if not isWholeDayEvent %}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Start</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            {{ event.startsAt|date('g:ia', false) }}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">End</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            {{ event.endsAt ? event.endsAt|date('g:ia', false) : '-' }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Time</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            Whole Day Event
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if event.description %}
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notes</label>
+                    <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800 whitespace-pre-wrap">{{ event.description }}</div>
+                </div>
+                {% endif %}
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Trainer</label>
+                    <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                        {{ event.trainer.firstName }} {{ event.trainer.lastName }}
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('view-shell-{{ event.id }}')"
+                            class="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<script>
+function openModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('[id^="view-shell-"]').forEach(function(modal) {
+        if (modal.style.display === 'flex') {
+            modal.style.display = 'none';
+        }
+    });
+    document.body.style.overflow = '';
+});
+</script>
 {% endblock %}

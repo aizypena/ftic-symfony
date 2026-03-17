@@ -228,11 +228,11 @@ body {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                 </div>
 
-                <div class="space-y-1 overflow-hidden mt-1 w-full relative z-10 pointer-events-none">
+                <div class="space-y-1 overflow-hidden mt-1 w-full relative z-10">
                     {% for event in day.events|slice(0, 4) %}
                         {% set isWholeDay = (event.startsAt|date('H:i', false) == '00:00' and (not event.endsAt or event.endsAt|date('H:i', false) == '23:59')) %}
-                        <div onclick="event.stopPropagation(); openModal('edit-shell-{{ event.id }}')"
-                             class="w-full text-left rounded px-2 py-1 text-xs font-medium cursor-pointer pointer-events-auto border border-transparent hover:border-green-200 transition"
+                        <div onclick="event.stopPropagation(); openModal('view-shell-{{ event.id }}')"
+                             class="w-full text-left rounded px-2 py-1 text-xs font-medium cursor-pointer border border-transparent hover:border-green-600 hover:shadow-sm transition"
                              style="background-color: #e8f2ea; color: #0b3612; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {% if not isWholeDay %}
                                 {{ event.startsAt|date('g:ia', false) }} 
@@ -330,6 +330,84 @@ body {
 </div>
 
 {% for event in monthEvents %}
+    <div id="view-shell-{{ event.id }}"
+         style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
+         onclick="if(event.target===this) closeModal('view-shell-{{ event.id }}')">
+        <div class="modal-shell">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                <h3 style="font-size:16px; font-weight:700; color:#111827; margin:0;">Event Details</h3>
+                <button type="button" onclick="closeModal('view-shell-{{ event.id }}')"
+                        style="width:32px; height:32px; border-radius:8px; border:none; background:#f3f4f6; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#6b7280;"
+                        onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Title</label>
+                    <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                        {{ event.title }}
+                    </div>
+                </div>
+
+                {% set isWholeDayEvent = (event.startsAt|date('H:i', false) == '00:00' and event.endsAt and event.endsAt|date('H:i', false) == '23:59') %}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Date</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            {{ event.startsAt|date('M j, Y', false) }}
+                        </div>
+                    </div>
+                    {% if not isWholeDayEvent %}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Start</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            {{ event.startsAt|date('g:ia', false) }}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">End</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            {{ event.endsAt ? event.endsAt|date('g:ia', false) : '-' }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Time</label>
+                        <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800">
+                            Whole Day Event
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if event.description %}
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notes</label>
+                    <div class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800 whitespace-pre-wrap">{{ event.description }}</div>
+                </div>
+                {% endif %}
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('view-shell-{{ event.id }}')"
+                            class="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                        Close
+                    </button>
+                    <button type="button" onclick="closeModal('view-shell-{{ event.id }}'); openModal('edit-shell-{{ event.id }}')"
+                            class="px-4 py-2 text-sm font-semibold rounded-lg text-white transition"
+                            style="background-color:#0b3612;"
+                            onmouseover="this.style.backgroundColor='#5c8d67'"
+                            onmouseout="this.style.backgroundColor='#0b3612'">
+                        Edit Event
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="edit-shell-{{ event.id }}"
          style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;"
          onclick="if(event.target===this) closeModal('edit-shell-{{ event.id }}')">
@@ -460,7 +538,7 @@ function toggleTimeInputs(prefix, isWholeDay) {
 
 document.addEventListener('keydown', function(event) {
     if (event.key !== 'Escape') return;
-    document.querySelectorAll('[id$="-modal"], [id^="edit-shell-"]').forEach(function(modal) {
+    document.querySelectorAll('[id$="-modal"], [id^="edit-shell-"], [id^="view-shell-"]').forEach(function(modal) {
         if (modal.style.display === 'flex') {
             modal.style.display = 'none';
         }
