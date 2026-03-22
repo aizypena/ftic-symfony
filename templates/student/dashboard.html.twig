@@ -68,7 +68,10 @@
                    class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-100 hover:border-feu-light hover:bg-feu-pale transition group">
                     <div class="min-w-0">
                         <p class="text-sm font-semibold text-gray-800 group-hover:text-feu-dark truncate">{{ course.name }}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">{{ course.trainer ? course.trainer.displayName : 'No trainer' }} &middot; {{ course.weeks|length }} weeks</p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            {{ course.trainer ? course.trainer.displayName : 'No trainer' }} &middot; {{ course.weeks|length }} weeks
+                            {% if course.term %}&middot; {{ course.term.schoolYear }} - {{ course.term.termLabel }}{% endif %}
+                        </p>
                     </div>
                     {% if course.status == 'active' %}
                         <span class="text-xs font-semibold px-2 py-1 rounded-full shrink-0 ml-2" style="background-color:#e8f2ea;color:#0b3612;">Active</span>

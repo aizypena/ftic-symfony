@@ -4,78 +4,127 @@
 
 {% block body %}
 
-{# ── Header ── #}
-<div class="mb-6 flex items-start justify-between gap-4 flex-wrap">
-    <div>
-        <a href="{{ path('app_student_courses') }}" class="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 mb-2">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Back to My Courses
-        </a>
-        <h1 class="text-2xl font-bold text-gray-900">{{ course.name }}</h1>
-        {% if course.description %}
-            <p class="text-sm text-gray-500 mt-1">{{ course.description }}</p>
-        {% endif %}
-    </div>
-    <div class="flex items-center gap-3 shrink-0">
-        <span class="text-xs font-semibold px-3 py-1.5 rounded-full"
-              style="{% if course.status == 'active' %}background-color:#e8f2ea;color:#0b3612;{% else %}background-color:#f3f4f6;color:#6b7280;{% endif %}">
-            {{ course.status|capitalize }}
-        </span>
-        {% if course.trainer %}
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-            <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                {{ course.trainer.displayName|first|upper }}
+{% set totalSubmissions = 0 %}
+{% for items in submissionsByWeek %}
+    {% set totalSubmissions = totalSubmissions + (items|length) %}
+{% endfor %}
+
+<section class="mb-8 space-y-6">
+    <div class="relative overflow-hidden rounded-3xl hero-banner hero-banner--student px-6 py-7 text-white shadow-xl">
+        <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3), transparent 45%), radial-gradient(circle at 80% 0%, rgba(255,255,255,0.25), transparent 50%);"></div>
+        <div class="relative flex flex-wrap items-start justify-between gap-6">
+            <div class="space-y-3 max-w-3xl">
+                <a href="{{ path('app_student_courses') }}" class="inline-flex items-center gap-1 text-xs text-emerald-100/80 hover:text-white transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Back to My Courses
+                </a>
+                <div class="space-y-1">
+                    <p class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">Course Journey</p>
+                    <h1 class="text-3xl font-semibold leading-tight">{{ course.name }}</h1>
+                </div>
+                {% if course.description %}
+                    <p class="text-sm text-white/80">{{ course.description }}</p>
+                {% endif %}
             </div>
-            {{ course.trainer.displayName }}
+            <div class="flex flex-col items-end gap-3 text-sm text-white/80">
+                <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold shadow-sm"
+                      style="background-color:rgba(255,255,255,0.15);">
+                    <span class="h-1.5 w-1.5 rounded-full" style="background-color:{% if course.status == 'active' %}#bbf7d0{% else %}#fee2e2{% endif %};"></span>
+                    {{ course.status|capitalize }}
+                </span>
+                {% if course.trainer %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-base font-semibold text-white">
+                            {{ course.trainer.displayName|first|upper }}
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs uppercase tracking-[0.25em] text-white/60">Trainer</p>
+                            <p class="text-sm font-semibold text-white">{{ course.trainer.displayName }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if course.term %}
+                    <div class="text-right">
+                        <p class="text-xs uppercase tracking-[0.25em] text-white/60">Academic Window</p>
+                        <p class="text-sm font-semibold text-white">{{ course.term.schoolYear }} · {{ course.term.termLabel }}</p>
+                        <p class="text-xs text-white/70">{{ course.term.startDate|date('M d, Y') }} – {{ course.term.endDate|date('M d, Y') }}</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
     </div>
-</div>
+
+    <div class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg font-semibold">{{ weeks|length }}</div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.35em] text-gray-400">Weekly cadence</p>
+                    <p class="text-sm font-semibold text-gray-800">14 scheduled weeks of content</p>
+                </div>
+            </div>
+            <div class="hidden h-10 w-px bg-gray-200 md:block"></div>
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-2xl bg-slate-50 text-slate-700 flex items-center justify-center text-lg font-semibold">
+                    {{ totalSubmissions }}
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.35em] text-gray-400">Your uploads</p>
+                    <p class="text-sm font-semibold text-gray-800">Track submitted assignments per week</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 {# ── Weekly Materials Accordion ── #}
-<div class="space-y-3">
+<section class="space-y-4">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-xs uppercase tracking-[0.4em] text-gray-400">Weekly drops</p>
+            <h2 class="text-lg font-semibold text-gray-900">Resources, announcements, and submissions</h2>
+        </div>
+        <p class="text-xs text-gray-400">Tap a week to expand details</p>
+    </div>
+    <div class="space-y-3">
 {% for w in 1..14 %}
     {% set week = weeks[w] is defined ? weeks[w] : null %}
     {% set hasMaterials = week and week.materials|length > 0 %}
 
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-
-        {# Week header — toggle #}
+    <div class="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden" data-week-card>
         <button type="button"
+                class="w-full flex items-center justify-between px-6 py-4 text-left transition hover:bg-gray-50"
                 onclick="toggleWeek({{ w }})"
-                class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition">
-            <div class="flex items-center gap-3">
-                <span class="w-2 h-8 rounded-full shrink-0"
-                      style="background-color:{% if hasMaterials %}#0b3612{% else %}#d1d5db{% endif %};"></span>
-                <div>
-                    <p class="text-sm font-semibold text-gray-900">Week {{ w }}</p>
-                    {% if week and week.title matches '/^Week \\d+$/' == false %}
-                        <p class="text-xs text-gray-500">{{ week.title }}</p>
+                aria-expanded="false"
+                data-week-toggle="{{ w }}">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-semibold"
+                     style="background-color:{% if hasMaterials %}#e8f2ea;color:#0b3612;{% else %}#f3f4f6;color:#6b7280;{% endif %};">
+                    W{{ '%02d'|format(w) }}
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 truncate">Week {{ w }}</p>
+                    {% if week and week.title matches '/^Week \d+$/' == false %}
+                        <p class="text-xs text-gray-500 truncate">{{ week.title }}</p>
                     {% endif %}
-                    {% if hasMaterials %}
-                        <p class="text-xs text-gray-400">{{ week.materials|length }} file{{ week.materials|length != 1 ? 's' : '' }}</p>
-                    {% else %}
-                        <p class="text-xs text-gray-400">No materials uploaded yet</p>
-                    {% endif %}
+                    <p class="text-xs text-gray-400">{{ hasMaterials ? week.materials|length : 0 }} file{{ hasMaterials and week.materials|length != 1 ? 's' : '' }}</p>
                 </div>
             </div>
-            <svg id="chevron-{{ w }}" class="w-4 h-4 text-gray-400 transition-transform duration-200"
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" data-week-chevron="{{ w }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
         </button>
 
-        {# Week body #}
-        <div id="week-body-{{ w }}" style="display:none;" class="border-t border-gray-100 px-6 py-4">
+        <div class="border-t border-gray-100 px-6 py-5 hidden" data-week-panel="{{ w }}">
             {% if hasMaterials %}
                 <ul class="space-y-2">
                     {% for material in week.materials %}
-                    <li class="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition">
+                    <li class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:border-emerald-100 hover:bg-emerald-50/40 transition">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background-color:#e8f2ea;">
-                                <svg class="w-4 h-4" style="color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background-color:#ecfdf5;color:#0b3612;">
+                                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
                             </div>
@@ -85,26 +134,18 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            {# View button — opens PDF modal #}
                             <button type="button"
                                     onclick="openPdfViewer('{{ asset('uploads/materials/' ~ material.filename) }}', '{{ material.originalName|e('html_attr') }}')"
-                                    class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white flex items-center gap-1.5 transition"
-                                    style="background-color:#0b3612;"
-                                    onmouseover="this.style.backgroundColor='#5c8d67'"
-                                    onmouseout="this.style.backgroundColor='#0b3612'">
+                                    class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 transition">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                 </svg>
                                 View
                             </button>
-                            {# Download button #}
                             <a href="{{ asset('uploads/materials/' ~ material.filename) }}"
                                download="{{ material.originalName }}"
-                               class="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
-                               style="background-color:#f3f4f6;color:#374151;"
-                               onmouseover="this.style.backgroundColor='#e5e7eb'"
-                               onmouseout="this.style.backgroundColor='#f3f4f6'">
+                               class="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                 </svg>
@@ -122,12 +163,12 @@
                 <div class="mt-6 border-t border-gray-100 pt-5">
                     <div class="flex items-center justify-between mb-4">
                         <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                            <svg class="w-4 h-4" style="color:#5c8d67;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                             Assignment Submission
                         </h4>
                     </div>
 
-                    <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+                    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-6">
                         {% set weekSubmissions = submissionsByWeek[week.id] ?? [] %}
                         {% set totalUploaded = weekSubmissions|length %}
                         {% set maxFiles = week.maxFiles|default(1) %}
@@ -162,7 +203,7 @@
                                 <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Your Files</h5>
                                 <ul class="space-y-2.5">
                                     {% for sub in weekSubmissions %}
-                                    <li class="flex flex-col gap-2 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow transition-shadow">
+                                    <li class="flex flex-col gap-2 p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:border-emerald-100 hover:shadow-md transition">
                                         <div class="flex items-center justify-between gap-3">
                                             <div class="flex items-center gap-3 min-w-0">
                                                 <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 {% if sub.status == 'graded' %}bg-green-50 text-green-700{% else %}bg-blue-50 text-blue-700{% endif %}">
@@ -203,12 +244,12 @@
 
                         <form action="{{ path('app_student_submission_upload', {courseId: course.id, weekId: week.id}) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-4 {% if not canUploadMore %}opacity-50 pointer-events-none{% endif %}">
                             <div class="flex items-center justify-center w-full">
-                                <label for="dropzone-file-{{ week.id }}" class="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-white hover:bg-gray-50 hover:border-feu-light transition-all">
+                                <label for="dropzone-file-{{ week.id }}" class="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-xl cursor-pointer bg-white border-gray-200 hover:border-emerald-200 hover:bg-emerald-50/40 transition-all">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                                        <svg class="w-8 h-8 mb-3 text-gray-400 group-hover:text-feu-light transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-8 h-8 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                         </svg>
-                                        <p class="mb-1 text-sm text-gray-600"><span class="font-semibold text-gray-800">Click to browse</span> or drag and drop</p>
+                                        <p class="mb-1 text-sm text-gray-600"><span class="font-semibold text-gray-800">Click to browse</span> or drag & drop</p>
                                         <p class="text-xs text-gray-400 mt-1">
                                             {% if week.allowedFileTypes and week.allowedFileTypes|length > 0 %}
                                                 Accepts {{ week.allowedFileTypes|join(', ')|upper }}
@@ -232,16 +273,10 @@
                                     >
                                 </label>
                             </div>
-                            
+
                             <button type="submit"
-                                    class="text-sm font-semibold text-white px-5 py-2.5 rounded-lg transition w-full flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                                    style="background-color:#0b3612;"
-                                    {% if canUploadMore %}
-                                    onmouseover="this.style.backgroundColor='#5c8d67'"
-                                    onmouseout="this.style.backgroundColor='#0b3612'"
-                                    {% else %}
-                                    disabled
-                                    {% endif %}>
+                                    class="text-sm font-semibold text-white px-5 py-2.5 rounded-xl transition w-full flex items-center justify-center gap-2 shadow-sm cursor-pointer bg-emerald-900 hover:bg-emerald-800"
+                                    {% if not canUploadMore %}disabled{% endif %}>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                                 Upload & Submit
                             </button>
@@ -254,27 +289,38 @@
     </div>
 {% endfor %}
 </div>
+</section>
 
 <script>
 function toggleWeek(n) {
-    var body    = document.getElementById('week-body-' + n);
-    var chevron = document.getElementById('chevron-' + n);
-    var open    = body.style.display !== 'none';
-    body.style.display    = open ? 'none' : 'block';
-    chevron.style.transform = open ? '' : 'rotate(180deg)';
+    const panel = document.querySelector('[data-week-panel="' + n + '"]');
+    const chevron = document.querySelector('[data-week-chevron="' + n + '"]');
+    const toggle = document.querySelector('[data-week-toggle="' + n + '"]');
+    if (!panel || !chevron || !toggle) {
+        return;
+    }
+
+    const isHidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+    toggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
 }
 
 function openPdfViewer(url, name) {
+    const modal = document.getElementById('pdf-viewer-modal');
     document.getElementById('pdf-viewer-title').textContent = name;
     document.getElementById('pdf-viewer-frame').src = url;
     document.getElementById('pdf-viewer-download').href = url;
     document.getElementById('pdf-viewer-download').setAttribute('download', name);
-    document.getElementById('pdf-viewer-modal').style.display = 'flex';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
 }
 
 function closePdfViewer() {
-    document.getElementById('pdf-viewer-modal').style.display = 'none';
+    const modal = document.getElementById('pdf-viewer-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
     document.getElementById('pdf-viewer-frame').src = '';
     document.body.style.overflow = '';
 }
@@ -282,52 +328,42 @@ function closePdfViewer() {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closePdfViewer();
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const firstToggle = document.querySelector('[data-week-toggle]');
+    if (firstToggle) {
+        toggleWeek(firstToggle.getAttribute('data-week-toggle'));
+    }
+});
 </script>
 
 {# ── PDF Viewer Modal ── #}
-<div id="pdf-viewer-modal"
-     style="display:none; position:fixed; inset:0; z-index:1000; align-items:stretch; flex-direction:column; background:rgba(0,0,0,0.7);"
-     onclick="if(event.target===this) closePdfViewer()">
-
-    {# Modal card #}
-    <div style="display:flex; flex-direction:column; width:100%; height:100%; max-width:960px; margin:0 auto; background:#fff; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-
-        {# Header #}
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 20px; border-bottom:1px solid #e5e7eb; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                <div style="width:32px; height:32px; border-radius:8px; background:#e8f2ea; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                    <svg style="width:16px;height:16px;color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div id="pdf-viewer-modal" class="fixed inset-0 z-50 hidden flex-col bg-black/70" onclick="if(event.target===this) closePdfViewer()">
+    <div class="mx-auto flex h-full w-full max-w-4xl flex-col rounded-none bg-white shadow-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                 </div>
-                <span id="pdf-viewer-title" style="font-size:14px; font-weight:600; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+                <span id="pdf-viewer-title" class="truncate text-sm font-semibold text-gray-900"></span>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                <a id="pdf-viewer-download" href="#" download
-                   style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:7px 14px; border-radius:8px; background:#f3f4f6; color:#374151; text-decoration:none; transition:background .15s;"
-                   onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-                    <svg style="width:13px;height:13px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-2">
+                <a id="pdf-viewer-download" href="#" download class="inline-flex items-center gap-1 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
                     Download
                 </a>
-                <button type="button" onclick="closePdfViewer()"
-                        style="width:32px; height:32px; border-radius:8px; border:none; background:#f3f4f6; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#6b7280;"
-                        onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" onclick="closePdfViewer()" class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
         </div>
-
-        {# PDF iframe #}
-        <iframe id="pdf-viewer-frame"
-                src=""
-                style="flex:1; width:100%; border:none; background:#525659;"
-                allowfullscreen>
-        </iframe>
-
+        <iframe id="pdf-viewer-frame" src="" class="h-full w-full flex-1 bg-slate-800" allowfullscreen></iframe>
     </div>
 </div>
 

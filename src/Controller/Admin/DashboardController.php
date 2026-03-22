@@ -2,11 +2,13 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\AcademicTerm;
 use App\Entity\Announcement;
 use App\Entity\Course;
 use App\Entity\User;
 use App\Form\CourseType;
 use App\Form\UserType;
+use App\Repository\AcademicTermRepository;
 use App\Repository\AnnouncementRepository;
 use App\Repository\CourseRepository;
 use App\Repository\UserRepository;
@@ -15,6 +17,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -145,13 +149,30 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/courses/new', name: 'app_admin_courses_new')]
-    public function courseNew(Request $request, EntityManagerInterface $em): Response
+    public function courseNew(Request $request, EntityManagerInterface $em, AcademicTermRepository $termRepository): Response
     {
         $course = new Course();
-        $form   = $this->createForm(CourseType::class, $course);
+        $form   = $this->createForm(CourseType::class, $course, [
+            'allow_term_selection' => true,
+        ]);
         $form->handleRequest($request);
 
+        if ($form->isSubmitted()) {
+            $this->validateCourseTermSelection($form);
+        }
+
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->isNewTermRequested($form)) {
+                $newTerm = $this->buildAcademicTermFromCourseForm($form);
+
+                if ($newTerm->isActive()) {
+                    $termRepository->deactivateAllExcept();
+                }
+
+                $em->persist($newTerm);
+                $course->setTerm($newTerm);
+            }
+
             $em->persist($course);
             $em->flush();
             $this->addFlash('success', 'Course created successfully.');
@@ -166,12 +187,29 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/courses/{id}/edit', name: 'app_admin_courses_edit')]
-    public function courseEdit(Course $course, Request $request, EntityManagerInterface $em): Response
+    public function courseEdit(Course $course, Request $request, EntityManagerInterface $em, AcademicTermRepository $termRepository): Response
     {
-        $form = $this->createForm(CourseType::class, $course);
+        $form = $this->createForm(CourseType::class, $course, [
+            'allow_term_selection' => true,
+        ]);
         $form->handleRequest($request);
 
+        if ($form->isSubmitted()) {
+            $this->validateCourseTermSelection($form);
+        }
+
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($this->isNewTermRequested($form)) {
+                $newTerm = $this->buildAcademicTermFromCourseForm($form);
+
+                if ($newTerm->isActive()) {
+                    $termRepository->deactivateAllExcept();
+                }
+
+                $em->persist($newTerm);
+                $course->setTerm($newTerm);
+            }
+
             $em->flush();
             $this->addFlash('success', 'Course updated successfully.');
             return $this->redirectToRoute('app_admin_courses');
@@ -227,6 +265,7 @@ class DashboardController extends AbstractController
                     $course->addStudent($student);
                     $enrolled++;
                 }
+
             }
             if ($enrolled > 0) {
                 $em->flush();
@@ -354,6 +393,128 @@ class DashboardController extends AbstractController
             $this->addFlash('success', $msg);
         }
         return $this->redirectToRoute('app_admin_users');
+    }
+
+    private function validateCourseTermSelection(FormInterface $form): void
+    {
+        if (!$form->has('termMode')) {
+            return;
+        }
+
+        $mode = $this->getTermMode($form);
+
+        if ($mode === 'existing') {
+            if ($form->has('term') && !$form->get('term')->getData()) {
+                $form->get('term')->addError(new FormError('Please select an existing school year & term.'));
+            }
+
+            return;
+        }
+
+        if ($mode !== 'new') {
+            return;
+        }
+
+        $this->requireCourseTermField($form, 'newTermSchoolYearStart', 'Select the starting year for this course.');
+        $this->requireCourseTermField($form, 'newTermSchoolYearEnd', 'Select the ending year for this course.');
+        $this->requireCourseTermField($form, 'newTermLabel', 'Choose which term this course belongs to.');
+        $this->requireCourseTermField($form, 'newTermStartDate', 'Select a start date for the new term.');
+        $this->requireCourseTermField($form, 'newTermEndDate', 'Select an end date for the new term.');
+
+        $startDate = $form->has('newTermStartDate') ? $form->get('newTermStartDate')->getData() : null;
+        $endDate   = $form->has('newTermEndDate') ? $form->get('newTermEndDate')->getData() : null;
+
+        if ($startDate && $endDate && $endDate < $startDate && $form->has('newTermEndDate')) {
+            $form->get('newTermEndDate')->addError(new FormError('End date must be on or after the start date.'));
+        }
+
+        $startYear = $form->has('newTermSchoolYearStart') ? $form->get('newTermSchoolYearStart')->getData() : null;
+        $endYear   = $form->has('newTermSchoolYearEnd') ? $form->get('newTermSchoolYearEnd')->getData() : null;
+
+        if ($startYear && $endYear && (int) $endYear <= (int) $startYear && $form->has('newTermSchoolYearEnd')) {
+            $form->get('newTermSchoolYearEnd')->addError(new FormError('The ending year must be after the starting year.'));
+        }
+
+        if ($startYear && $endYear) {
+            $allowedYears = [(int) $startYear, (int) $endYear];
+
+            if ($startDate) {
+                $startDateYear = (int) $startDate->format('Y');
+                if (!\in_array($startDateYear, $allowedYears, true) && $form->has('newTermStartDate')) {
+                    $form->get('newTermStartDate')->addError(new FormError(sprintf('Start date must fall within the %s–%s school year.', $startYear, $endYear)));
+                }
+            }
+
+            if ($endDate) {
+                $endDateYear = (int) $endDate->format('Y');
+                if (!\in_array($endDateYear, $allowedYears, true) && $form->has('newTermEndDate')) {
+                    $form->get('newTermEndDate')->addError(new FormError(sprintf('End date must fall within the %s–%s school year.', $startYear, $endYear)));
+                }
+            }
+        }
+    }
+
+    private function requireCourseTermField(FormInterface $form, string $field, string $message): void
+    {
+        if (!$form->has($field)) {
+            return;
+        }
+
+        $value = $form->get($field)->getData();
+
+        if ($value instanceof \DateTimeInterface) {
+            return;
+        }
+
+        if ($value === null) {
+            $form->get($field)->addError(new FormError($message));
+            return;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            $form->get($field)->addError(new FormError($message));
+        }
+    }
+
+    private function isNewTermRequested(FormInterface $form): bool
+    {
+        return $form->has('termMode') && $this->getTermMode($form) === 'new';
+    }
+
+    private function getTermMode(FormInterface $form): string
+    {
+        return (string) ($form->get('termMode')->getData() ?? 'existing');
+    }
+
+    private function buildAcademicTermFromCourseForm(FormInterface $form): AcademicTerm
+    {
+        $startDate = $this->convertToImmutable($form->get('newTermStartDate')->getData());
+        $endDate   = $this->convertToImmutable($form->get('newTermEndDate')->getData());
+
+        if (!$startDate || !$endDate) {
+            throw new \RuntimeException('Start and end dates are required when creating a new term.');
+        }
+
+        $startYear = (string) $form->get('newTermSchoolYearStart')->getData();
+        $endYear   = (string) $form->get('newTermSchoolYearEnd')->getData();
+
+        return (new AcademicTerm())
+            ->setSchoolYear(sprintf('%s-%s', trim($startYear), trim($endYear)))
+            ->setTermLabel((string) $form->get('newTermLabel')->getData())
+            ->setStartDate($startDate)
+            ->setEndDate($endDate)
+            ->setIsActive((bool) $form->get('newTermIsActive')->getData());
+    }
+
+    private function convertToImmutable(?\DateTimeInterface $value): ?\DateTimeImmutable
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return $value instanceof \DateTimeImmutable
+            ? $value
+            : \DateTimeImmutable::createFromInterface($value);
     }
 }
 

@@ -1,0 +1,87 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Academic Terms – FTIC Admin{% endblock %}
+
+{% block body %}
+<div class="mb-6 flex items-center justify-between flex-wrap gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Academic Terms</h1>
+        <p class="text-sm text-gray-500 mt-1">Control the school year and term ranges used across the platform</p>
+    </div>
+    <a href="{{ path('app_admin_terms_new') }}"
+       class="inline-flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg shadow-sm transition"
+       style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        New Term
+    </a>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-900">Defined Terms</h2>
+        <span class="text-xs text-gray-400">{{ terms|length }} term{{ terms|length != 1 ? 's' : '' }}</span>
+    </div>
+
+    {% if terms|length > 0 %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
+                    <th class="px-6 py-3 font-medium">School Year</th>
+                    <th class="px-6 py-3 font-medium">Term</th>
+                    <th class="px-6 py-3 font-medium">Date Range</th>
+                    <th class="px-6 py-3 font-medium">Status</th>
+                    <th class="px-6 py-3 font-medium">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for term in terms %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 font-semibold text-gray-900">{{ term.schoolYear }}</td>
+                        <td class="px-6 py-4 text-gray-600">{{ term.termLabel }}</td>
+                        <td class="px-6 py-4 text-gray-500">{{ term.startDate|date('M d, Y') }} - {{ term.endDate|date('M d, Y') }}</td>
+                        <td class="px-6 py-4">
+                            {% if term.isActive %}
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full" style="background-color:#e8f2ea;color:#0b3612;">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Active
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
+                                    Inactive
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <a href="{{ path('app_admin_terms_edit', {id: term.id}) }}" class="text-xs font-medium hover:underline" style="color:#0b3612;">Edit</a>
+                                {% if not term.isActive %}
+                                    <form method="post" action="{{ path('app_admin_terms_activate', {id: term.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('activate-term-' ~ term.id) }}">
+                                        <button type="submit"
+                                                class="text-xs font-medium px-3 py-1.5 rounded-lg text-white transition"
+                                                style="background-color:#5c8d67;" onmouseover="this.style.backgroundColor='#0b3612'" onmouseout="this.style.backgroundColor='#5c8d67'">
+                                            Set Active
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="px-6 py-20 text-center text-gray-400">
+            <svg class="w-12 h-12 mb-3 text-gray-200 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7h18M3 12h18M3 17h18"/>
+            </svg>
+            <p class="text-sm font-medium">No academic terms have been defined yet.</p>
+            <p class="text-xs mt-1">Create a term to control course visibility for students.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

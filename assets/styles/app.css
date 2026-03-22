@@ -6,3 +6,17 @@
     --color-feu-pale: #e8f2ea;
     --color-feu-muted: #c4d9c8;
 }
+
+.hero-banner {
+    color: #fff;
+    background-color: var(--color-feu-dark);
+}
+
+.hero-banner--admin-course,
+.hero-banner--admin-term {
+    background-color: var(--color-feu-dark);
+}
+
+.hero-banner--student {
+    background: linear-gradient(125deg, #0b3612 0%, #5c8d67 45%, #0b3612 100%);
+}

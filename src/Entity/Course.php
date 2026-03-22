@@ -26,6 +26,10 @@ class Course
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?User $trainer = null;
 
+    #[ORM\ManyToOne(inversedBy: 'courses')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?AcademicTerm $term = null;
+
     #[ORM\Column(length: 20)]
     private string $status = 'active';
 
@@ -59,13 +63,41 @@ class Course
     public function getId(): ?int { return $this->id; }
 
     public function getName(): string { return $this->name; }
-    public function setName(string $name): static { $this->name = $name; return $this; }
+    public function setName(?string $name): static
+    {
+        $this->name = $name === null ? '' : $name;
+
+        return $this;
+    }
 
     public function getDescription(): ?string { return $this->description; }
     public function setDescription(?string $description): static { $this->description = $description; return $this; }
 
     public function getTrainer(): ?User { return $this->trainer; }
     public function setTrainer(?User $trainer): static { $this->trainer = $trainer; return $this; }
+
+    public function getTerm(): ?AcademicTerm
+    {
+        return $this->term;
+    }
+
+    public function setTerm(?AcademicTerm $term): static
+    {
+        $this->term = $term;
+
+        return $this;
+    }
+
+    public function isWithinActiveTerm(?\DateTimeImmutable $date = null): bool
+    {
+        if (!$this->term) {
+            return false;
+        }
+
+        $date ??= new \DateTimeImmutable('today');
+
+        return $this->term->isActive() && $this->term->containsDate($date);
+    }
 
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $status): static { $this->status = $status; return $this; }

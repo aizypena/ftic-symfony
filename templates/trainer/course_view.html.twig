@@ -17,6 +17,9 @@
         {% if course.description %}
             <p class="text-sm text-gray-500 mt-1">{{ course.description }}</p>
         {% endif %}
+        {% if course.term %}
+            <p class="text-xs text-gray-400 mt-1">{{ course.term.schoolYear }} - {{ course.term.termLabel }} ({{ course.term.startDate|date('M d, Y') }} - {{ course.term.endDate|date('M d, Y') }})</p>
+        {% endif %}
     </div>
     <div class="flex items-center gap-3 shrink-0">
         <span class="text-xs font-semibold px-3 py-1 rounded-full"

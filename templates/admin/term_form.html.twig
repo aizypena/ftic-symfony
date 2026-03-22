@@ -1,0 +1,247 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ title }} – FTIC Admin{% endblock %}
+
+{% block body %}
+<div class="space-y-12">
+    <section class="relative overflow-hidden rounded-3xl hero-banner hero-banner--admin-term px-8 py-8 text-white shadow-2xl"
+             style="background-color:#0b3612;">
+        <div class="absolute inset-0 opacity-25" style="background-image: radial-gradient(circle at 15% 20%, rgba(92,141,103,0.35), transparent 45%), radial-gradient(circle at 75% 0%, rgba(196,217,200,0.25), transparent 50%);"></div>
+        <div class="relative flex flex-wrap items-start justify-between gap-6">
+            <div class="space-y-3 max-w-3xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.45em] text-white/70">Academic cadence</p>
+                <h1 class="text-3xl font-semibold leading-tight">{{ title }}</h1>
+                <p class="text-sm text-white/80">Define the school-year span, attach one of the three supported terms, and lock the dates students will follow.</p>
+            </div>
+            <a href="{{ path('app_admin_terms') }}" class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to terms
+            </a>
+        </div>
+    </section>
+
+    {{ form_start(form, {attr: {class: 'space-y-8', novalidate: 'novalidate'}}) }}
+
+    <div class="grid gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm space-y-6">
+            <header class="flex items-center gap-3">
+                <div class="rounded-2xl bg-indigo-50 p-2 text-indigo-900">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10m2 8H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.35em] text-indigo-900">School year blueprint</p>
+                    <p class="text-sm text-gray-500">Set the span, label the term, anchor the dates.</p>
+                </div>
+            </header>
+
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <p class="text-xs font-semibold uppercase tracking-[0.35em] text-gray-400">School year</p>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            {{ form_label(form.schoolYearStart, 'From', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                            {{ form_widget(form.schoolYearStart, {attr: {
+                                class: 'w-full rounded-2xl border bg-gray-50 px-4 py-3 text-sm focus:ring-2 ' ~ (form.schoolYearStart.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-indigo-200')
+                            }}) }}
+                            {{ form_errors(form.schoolYearStart) }}
+                        </div>
+                        <div>
+                            {{ form_label(form.schoolYearEnd, 'To', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                            {{ form_widget(form.schoolYearEnd, {attr: {
+                                class: 'w-full rounded-2xl border bg-gray-50 px-4 py-3 text-sm focus:ring-2 ' ~ (form.schoolYearEnd.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-indigo-200')
+                            }}) }}
+                            {{ form_errors(form.schoolYearEnd) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    {{ form_label(form.termLabel, 'Term label', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                    {{ form_widget(form.termLabel, {attr: {
+                        class: 'w-full rounded-2xl border bg-white px-4 py-3 text-sm focus:ring-2 ' ~ (form.termLabel.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-indigo-200'),
+                        placeholder: 'First, Second, or Third'
+                    }}) }}
+                    {{ form_errors(form.termLabel) }}
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        {{ form_label(form.startDate, 'Term starts', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                        {{ form_widget(form.startDate, {attr: {
+                            class: 'w-full rounded-2xl border bg-white px-4 py-3 text-sm focus:ring-2 ' ~ (form.startDate.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-indigo-200')
+                        }}) }}
+                        {{ form_errors(form.startDate) }}
+                    </div>
+                    <div>
+                        {{ form_label(form.endDate, 'Term ends', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                        {{ form_widget(form.endDate, {attr: {
+                            class: 'w-full rounded-2xl border bg-white px-4 py-3 text-sm focus:ring-2 ' ~ (form.endDate.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-indigo-200')
+                        }}) }}
+                        {{ form_errors(form.endDate) }}
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
+                    <p class="font-semibold text-gray-900">Guardrails</p>
+                    <p>Year ranges should be consecutive (e.g. 2025–2026) and term labels limited to the three official cycles so reports stay in sync.</p>
+                </div>
+            </div>
+        </section>
+
+        <aside class="space-y-5 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div class="space-y-3">
+                <header class="flex items-center gap-3">
+                    <div class="rounded-xl bg-sky-50 p-2 text-sky-900">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.35em] text-sky-900">Activation</p>
+                        <p class="text-sm text-gray-500">Toggle visibility for students.</p>
+                    </div>
+                </header>
+                <div class="flex items-start gap-3 rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-3">
+                    {{ form_widget(form.isActive, {attr: {class: 'mt-1 h-5 w-5 rounded border-sky-300 text-sky-600'}}) }}
+                    <div>
+                        {{ form_label(form.isActive, 'Mark as active term', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                        <p class="text-xs text-gray-600">Only one term can be active at a time. Flipping this on hides prior terms for learners.</p>
+                        {{ form_errors(form.isActive) }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white to-indigo-50 px-5 py-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.4em] text-indigo-800">Live preview</p>
+                <div class="mt-3 space-y-2 text-gray-900">
+                    <p class="text-lg font-semibold" data-preview="year">20XX–20YY</p>
+                    <p class="text-sm" data-preview="term">Term label</p>
+                    <p class="text-xs text-gray-500" data-preview="dates">Start — End</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="sticky bottom-0 left-0 right-0 -mx-6 -mb-6 flex flex-wrap items-center gap-4 border-t border-gray-100 bg-white/95 px-6 py-4 backdrop-blur">
+        <button type="submit" class="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 cursor-pointer"
+                style="background-color:#0b3612;box-shadow:0 10px 25px rgba(11,54,18,0.25);"
+                onmouseover="this.style.backgroundColor='#0d4a18'"
+                onmouseout="this.style.backgroundColor='#0b3612'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Save academic term
+        </button>
+        <a href="{{ path('app_admin_terms') }}" class="text-sm font-medium text-gray-500 hover:text-gray-800">Cancel</a>
+    </div>
+
+    {{ form_end(form) }}
+</div>
+
+{% set termFormErrors = [] %}
+{% if form is defined %}
+    {% for error in form.vars.errors %}
+        {% set termFormErrors = termFormErrors|merge([error.message]) %}
+    {% endfor %}
+    {% for child in form %}
+        {% for error in child.vars.errors %}
+            {% set termFormErrors = termFormErrors|merge([error.message]) %}
+        {% endfor %}
+    {% endfor %}
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const yearStart = document.querySelector('[name="{{ form.schoolYearStart.vars.full_name|e('js') }}"]');
+        const yearEnd = document.querySelector('[name="{{ form.schoolYearEnd.vars.full_name|e('js') }}"]');
+        const termLabel = document.querySelector('[name="{{ form.termLabel.vars.full_name|e('js') }}"]');
+        const startDate = document.querySelector('[name="{{ form.startDate.vars.full_name|e('js') }}"]');
+        const endDate = document.querySelector('[name="{{ form.endDate.vars.full_name|e('js') }}"]');
+
+        const previewYear = document.querySelector('[data-preview="year"]');
+        const previewTerm = document.querySelector('[data-preview="term"]');
+        const previewDates = document.querySelector('[data-preview="dates"]');
+
+        const formatYearRange = () => {
+            const startYearValue = yearStart?.value || '20XX';
+            const endYearValue = yearEnd?.value || '20YY';
+            previewYear.textContent = `${startYearValue}–${endYearValue}`;
+        };
+
+        const updatePreview = () => {
+            formatYearRange();
+
+            const selectedTerm = termLabel?.options?.length
+                ? termLabel.options[termLabel.selectedIndex]?.text || 'Term label'
+                : (termLabel?.value || 'Term label');
+            previewTerm.textContent = selectedTerm;
+
+            const startDateText = startDate?.value || 'Start';
+            const endDateText = endDate?.value || 'End';
+            previewDates.textContent = `${startDateText} — ${endDateText}`;
+        };
+
+        const applyDateBounds = () => {
+            const startYearValue = parseInt(yearStart?.value || '', 10);
+            const endYearValue = parseInt(yearEnd?.value || '', 10);
+
+            if (!startYearValue || !endYearValue) {
+                [startDate, endDate].forEach((field) => {
+                    field?.removeAttribute('min');
+                    field?.removeAttribute('max');
+                });
+                return;
+            }
+
+            const minDate = `${startYearValue}-01-01`;
+            const maxDate = `${endYearValue}-12-31`;
+
+            [startDate, endDate].forEach((field) => {
+                if (!field) {
+                    return;
+                }
+                field.setAttribute('min', minDate);
+                field.setAttribute('max', maxDate);
+
+                if (field.value && (field.value < minDate || field.value > maxDate)) {
+                    field.value = '';
+                }
+            });
+        };
+
+        const handleYearChange = () => {
+            updatePreview();
+            applyDateBounds();
+        };
+
+        [yearStart, yearEnd].forEach((field) => {
+            field?.addEventListener('change', handleYearChange);
+            field?.addEventListener('input', handleYearChange);
+        });
+
+        [termLabel, startDate, endDate].forEach((field) => {
+            field?.addEventListener('change', updatePreview);
+            field?.addEventListener('input', updatePreview);
+        });
+
+        updatePreview();
+        applyDateBounds();
+    });
+</script>
+{% if termFormErrors is not empty %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const messages = {{ termFormErrors|json_encode|raw }};
+            messages.forEach((message) => {
+                if (typeof showToast === 'function') {
+                    showToast('error', message);
+                }
+            });
+        });
+    </script>
+{% endif %}
+{% endblock %}

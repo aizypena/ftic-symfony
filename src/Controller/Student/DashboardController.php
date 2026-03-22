@@ -21,12 +21,7 @@ class DashboardController extends AbstractController
         /** @var \App\Entity\User $me */
         $me = $this->getUser();
 
-        $myCourses = $courseRepo->createQueryBuilder('c')
-            ->join('c.students', 's')
-            ->where('s.id = :id')
-            ->andWhere('c.status = :status')
-            ->setParameter('id', $me->getId())
-            ->setParameter('status', 'active')
+        $myCourses = $courseRepo->createActiveForStudentQueryBuilder($me)
             ->orderBy('c.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
@@ -50,12 +45,7 @@ class DashboardController extends AbstractController
         /** @var \App\Entity\User $me */
         $me = $this->getUser();
 
-        $myCourses = $courseRepo->createQueryBuilder('c')
-            ->join('c.students', 's')
-            ->where('s.id = :id')
-            ->andWhere('c.status = :status')
-            ->setParameter('id', $me->getId())
-            ->setParameter('status', 'active')
+        $myCourses = $courseRepo->createActiveForStudentQueryBuilder($me)
             ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
@@ -71,15 +61,10 @@ class DashboardController extends AbstractController
     {
         /** @var \App\Entity\User $me */
         $me     = $this->getUser();
-        $course = $courseRepo->find($id);
+        $course = $courseRepo->findActiveCourseForStudent($me, $id);
 
-        if (!$course || !$course->hasStudent($me)) {
+        if (!$course) {
             $this->addFlash('error', 'You are not enrolled in that course.');
-            return $this->redirectToRoute('app_student_courses');
-        }
-
-        if ($course->getStatus() !== 'active') {
-            $this->addFlash('error', 'This course is currently unavailable.');
             return $this->redirectToRoute('app_student_courses');
         }
 
@@ -122,10 +107,10 @@ class DashboardController extends AbstractController
     ): Response {
         /** @var \App\Entity\User $me */
         $me = $this->getUser();
-        $course = $courseRepo->find($courseId);
+        $course = $courseRepo->findActiveCourseForStudent($me, $courseId);
         $week = $weekRepo->find($weekId);
 
-        if (!$course || !$course->hasStudent($me) || !$week || $week->getCourse() !== $course) {
+        if (!$course || !$week || $week->getCourse() !== $course) {
             throw $this->createAccessDeniedException('Invalid course or week.');
         }
 

@@ -30,6 +30,9 @@
             {% if course.description %}
                 <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ course.description }}</p>
             {% endif %}
+            {% if course.term %}
+                <p class="text-xs text-gray-400 mt-1">{{ course.term.schoolYear }} - {{ course.term.termLabel }}</p>
+            {% endif %}
         </div>
 
         {# Trainer #}

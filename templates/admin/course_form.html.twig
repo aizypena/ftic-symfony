@@ -3,78 +3,329 @@
 {% block title %}{{ title }} – FTIC Admin{% endblock %}
 
 {% block body %}
-<div class="mb-6 flex items-center justify-between">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
-        <p class="text-sm text-gray-500 mt-1">Fill in the details below</p>
+<div class="space-y-12">
+    <section class="relative overflow-hidden rounded-3xl hero-banner hero-banner--admin-course px-8 py-8 text-white shadow-2xl"
+             style="background-color:#0b3612;">
+        <div class="absolute inset-0 opacity-25" style="background-image: radial-gradient(circle at 15% 15%, rgba(92,141,103,0.35), transparent 45%), radial-gradient(circle at 75% 0%, rgba(196,217,200,0.25), transparent 50%);"></div>
+        <div class="relative grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div class="space-y-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.45em] text-emerald-200/80">Course architect</p>
+                <h1 class="text-3xl font-semibold leading-tight">{{ title }}</h1>
+                <p class="text-sm text-white/80 max-w-2xl">Design a compelling experience, wire it to the right trainer, and drop it into the exact academic window students will see.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 lg:col-span-2">
+                <a href="{{ path('app_admin_courses') }}" class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to courses
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {{ form_start(form, {attr: {class: 'space-y-10', novalidate: 'novalidate'}}) }}
+
+    <div class="grid gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div class="space-y-8">
+            <section class="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm space-y-6">
+
+                <div class="space-y-5">
+                    <div class="space-y-2">
+                        {{ form_label(form.name, 'Course name', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                        {{ form_widget(form.name, {attr: {
+                            class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.name.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-gray-50 focus:border-emerald-500 focus:ring-emerald-200'),
+                            placeholder: 'e.g. Basic Fire Safety Training'
+                        }}) }}
+                        {{ form_errors(form.name) }}
+                    </div>
+
+                    <div class="space-y-2">
+                        {{ form_label(form.description, 'Narrative', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                        {{ form_widget(form.description, {attr: {
+                            class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 resize-none ' ~ (form.description.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-gray-50 focus:border-emerald-500 focus:ring-emerald-200'),
+                            rows: 4,
+                            placeholder: 'Describe the promise, structure, or credentials learners get…'
+                        }}) }}
+                        {{ form_errors(form.description) }}
+                    </div>
+
+                    <div class="space-y-2">
+                        {{ form_label(form.trainer, 'Assign trainer', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                        {{ form_widget(form.trainer, {attr: {
+                            class: 'w-full rounded-2xl border px-4 py-3 text-sm shadow-inner focus:ring-2 ' ~ (form.trainer.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-200')
+                        }}) }}
+                        <p class="text-xs text-gray-500">Only trainer accounts with verified status appear in this picker.</p>
+                        {{ form_errors(form.trainer) }}
+                    </div>
+                </div>
+            </section>
+
+            {% if form.termMode is defined %}
+                {% set hasExistingTerms = form.term.vars.choices|length > 0 %}
+                <section class="rounded-3xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50 to-white p-6 shadow-sm space-y-6">
+                    <header class="flex items-center gap-3">
+                        <div class="rounded-2xl bg-emerald-100 p-2 text-emerald-800">
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-800">Academic window</p>
+                            <p class="text-sm text-emerald-900/80">Choose a published term or craft a fresh one inline.</p>
+                        </div>
+                    </header>
+
+                    <div class="rounded-2xl border p-4 shadow-sm {{ form.termMode.vars.errors|length ? 'border-red-300 bg-red-50/80' : 'border-emerald-100 bg-white/80' }}">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-700">Selection mode</p>
+                                <p class="text-sm text-emerald-900">Decide whether to reuse a published term or launch a new one.</p>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-emerald-700">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 font-semibold">{{ form.term.vars.choices|length }}</span>
+                                <span>Terms available</span>
+                            </div>
+                        </div>
+                        <div data-term-mode class="grid gap-3 md:grid-cols-2">
+                            {% for child in form.termMode %}
+                                <label class="group relative block overflow-hidden rounded-2xl border border-emerald-100 bg-white p-4 transition hover:-translate-y-0.5 hover:border-emerald-200" data-term-value="{{ child.vars.value }}">
+                                    {{ form_widget(child, {attr: {class: 'sr-only peer'}}) }}
+                                    <div class="space-y-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-sm font-semibold text-emerald-900 peer-checked:text-emerald-700">{{ child.vars.label }}</span>
+                                            <span class="text-[10px] tracking-[0.4em] uppercase text-emerald-500 peer-checked:text-emerald-800">Mode {{ loop.index }}</span>
+                                        </div>
+                                        {% set helper = child.vars.attr['data-description'] ?? '' %}
+                                        {% if helper %}
+                                            <p class="text-xs text-emerald-800/80 peer-checked:text-emerald-900">{{ helper }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="absolute inset-0 pointer-events-none rounded-2xl border-2 border-transparent peer-checked:border-emerald-600"></div>
+                                    <div class="absolute -right-2 -top-2 hidden rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold uppercase text-white shadow peer-checked:block">Selected</div>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {{ form_errors(form.termMode) }}
+
+                    <div class="grid gap-6 md:grid-cols-3" data-term-section="existing">
+                        <div class="md:col-span-2 space-y-2">
+                            <div class="flex items-center justify-between">
+                                {{ form_label(form.term, 'Existing school year & term', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                                {% if not hasExistingTerms %}
+                                    <span class="text-[10px] font-semibold uppercase tracking-[0.4em] text-amber-600">None yet</span>
+                                {% endif %}
+                            </div>
+                            {{ form_widget(form.term, {attr: {
+                                class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.term.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-200'),
+                                disabled: not hasExistingTerms ? 'disabled' : null
+                            }}) }}
+                            {{ form_errors(form.term) }}
+                        </div>
+                        <div class="rounded-2xl border border-emerald-100 bg-white/70 px-4 py-3 text-xs text-emerald-900">
+                            <p class="font-semibold">Visibility hint</p>
+                            <p>Students only see courses tied to the currently active term.</p>
+                        </div>
+                        {% if not hasExistingTerms %}
+                            <div class="md:col-span-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                                <p class="font-semibold">No academic windows yet.</p>
+                                <p class="mt-1">Switch to “Create new term” above or <a class="underline" href="{{ path('app_admin_terms') }}">manage terms</a>.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="space-y-5 hidden" data-term-section="new">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="space-y-2">
+                                {{ form_label(form.newTermSchoolYearStart, 'School year (from)', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                                {{ form_widget(form.newTermSchoolYearStart, {attr: {
+                                    class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.newTermSchoolYearStart.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-200')
+                                }}) }}
+                                {{ form_errors(form.newTermSchoolYearStart) }}
+                            </div>
+                            <div class="space-y-2">
+                                {{ form_label(form.newTermSchoolYearEnd, 'School year (to)', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                                {{ form_widget(form.newTermSchoolYearEnd, {attr: {
+                                    class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.newTermSchoolYearEnd.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-200')
+                                }}) }}
+                                {{ form_errors(form.newTermSchoolYearEnd) }}
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            {{ form_label(form.newTermLabel, 'Term name', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                            {{ form_widget(form.newTermLabel, {attr: {
+                                class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.newTermLabel.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-200')
+                            }}) }}
+                            {{ form_errors(form.newTermLabel) }}
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="space-y-2">
+                                {{ form_label(form.newTermStartDate, 'Starts on', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                                {{ form_widget(form.newTermStartDate, {attr: {
+                                    class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.newTermStartDate.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-200')
+                                }}) }}
+                                {{ form_errors(form.newTermStartDate) }}
+                            </div>
+                            <div class="space-y-2">
+                                {{ form_label(form.newTermEndDate, 'Ends on', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                                {{ form_widget(form.newTermEndDate, {attr: {
+                                    class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.newTermEndDate.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-200')
+                                }}) }}
+                                {{ form_errors(form.newTermEndDate) }}
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3">
+                            {{ form_widget(form.newTermIsActive, {attr: {
+                                class: 'mt-1 h-5 w-5 rounded border focus:ring-2 ' ~ (form.newTermIsActive.vars.errors|length ? 'border-red-400 text-red-600 focus:ring-red-200' : 'border-emerald-200 text-emerald-600 focus:ring-emerald-200')
+                            }}) }}
+                            <div>
+                                {{ form_label(form.newTermIsActive, 'Set as active term', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                                <p class="text-xs text-gray-600">Activating this term hides courses tied to older school years.</p>
+                                {{ form_errors(form.newTermIsActive) }}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            {% endif %}
+        </div>
+
+        <aside class="space-y-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div class="space-y-4">
+                <header class="flex items-center gap-3">
+                    <div class="rounded-xl bg-sky-50 p-2 text-sky-900">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 1m6-1a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.35em] text-sky-900">Publishing</p>
+                        <p class="text-sm text-gray-500">Control visibility with a single toggle.</p>
+                    </div>
+                </header>
+
+                <div class="space-y-2">
+                    {{ form_label(form.status, 'Status', {label_attr: {class: 'text-sm font-semibold text-gray-900'}}) }}
+                    {{ form_widget(form.status, {attr: {
+                        class: 'w-full rounded-2xl border px-4 py-3 text-sm focus:ring-2 ' ~ (form.status.vars.errors|length ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 bg-white focus:border-sky-500 focus:ring-sky-200')
+                    }}) }}
+                    {{ form_errors(form.status) }}
+                </div>
+                <div class="rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-3 text-xs text-sky-900">
+                    <p class="font-semibold">Status guide</p>
+                    <p>Active courses are shown to students registered in the matching term. Keep drafts inactive until ready.</p>
+                </div>
+            </div>
+
+        </aside>
     </div>
-    <a href="{{ path('app_admin_courses') }}"
-       class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-        Back to Courses
-    </a>
+
+    <div class="sticky bottom-0 left-0 right-0 -mx-6 -mb-6 flex flex-wrap items-center gap-4 border-t border-gray-100 bg-white/95 px-6 py-4 backdrop-blur">
+        <button type="submit" class="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 cursor-pointer"
+                style="background-color:#0b3612;box-shadow:0 10px 25px rgba(11,54,18,0.25);"
+                onmouseover="this.style.backgroundColor='#0d4a18'"
+                onmouseout="this.style.backgroundColor='#0b3612'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Save course
+        </button>
+        <a href="{{ path('app_admin_courses') }}" class="text-sm font-medium text-gray-500 hover:text-gray-800">Cancel</a>
+    </div>
+
+    {{ form_end(form) }}
 </div>
 
-{{ form_start(form, {attr: {class: 'space-y-6', novalidate: 'novalidate'}}) }}
+{% set courseFormErrors = [] %}
+{% if form is defined %}
+    {% for error in form.vars.errors %}
+        {% set courseFormErrors = courseFormErrors|merge([error.message]) %}
+    {% endfor %}
+    {% for child in form %}
+        {% for error in child.vars.errors %}
+            {% set courseFormErrors = courseFormErrors|merge([error.message]) %}
+        {% endfor %}
+    {% endfor %}
+{% endif %}
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+{% if form.termMode is defined %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modeInputs = document.querySelectorAll('input[name="{{ form.termMode.vars.full_name|e('js') }}"]');
+            const sections = document.querySelectorAll('[data-term-section]');
 
-    {# Course Name #}
-    <div>
-        {{ form_label(form.name, 'Course Name', {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-        {{ form_widget(form.name, {attr: {
-            class: 'w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-0 bg-gray-50',
-            style: 'focus:ring-color:#0b3612;',
-            placeholder: 'e.g. Basic Fire Safety Training'
-        }}) }}
-        {{ form_errors(form.name) }}
-    </div>
+            const yearStart = document.querySelector('[name="{{ form.newTermSchoolYearStart.vars.full_name|e('js') }}"]');
+            const yearEnd = document.querySelector('[name="{{ form.newTermSchoolYearEnd.vars.full_name|e('js') }}"]');
+            const startDate = document.querySelector('[name="{{ form.newTermStartDate.vars.full_name|e('js') }}"]');
+            const endDate = document.querySelector('[name="{{ form.newTermEndDate.vars.full_name|e('js') }}"]');
 
-    {# Description #}
-    <div>
-        {{ form_label(form.description, 'Description', {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-        {{ form_widget(form.description, {attr: {
-            class: 'w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 bg-gray-50 resize-none',
-            rows: 4,
-            placeholder: 'Briefly describe what this course covers…'
-        }}) }}
-        {{ form_errors(form.description) }}
-    </div>
+            const applyDateBounds = () => {
+                const startYearValue = parseInt(yearStart?.value || '', 10);
+                const endYearValue = parseInt(yearEnd?.value || '', 10);
 
-    {# Trainer #}
-    <div>
-        {{ form_label(form.trainer, 'Assign Trainer', {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-        {{ form_widget(form.trainer, {attr: {
-            class: 'w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 bg-gray-50'
-        }}) }}
-        <p class="mt-1 text-xs text-gray-400">Only users with the Trainer role are shown.</p>
-        {{ form_errors(form.trainer) }}
-    </div>
+                if (!startYearValue || !endYearValue) {
+                    [startDate, endDate].forEach((field) => {
+                        field?.removeAttribute('min');
+                        field?.removeAttribute('max');
+                    });
+                    return;
+                }
 
-    {# Status #}
-    <div>
-        {{ form_label(form.status, 'Status', {label_attr: {class: 'block text-sm font-medium text-gray-700 mb-1'}}) }}
-        {{ form_widget(form.status, {attr: {
-            class: 'w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 bg-gray-50'
-        }}) }}
-        {{ form_errors(form.status) }}
-    </div>
+                const minDate = `${startYearValue}-01-01`;
+                const maxDate = `${endYearValue}-12-31`;
 
-</div>
+                [startDate, endDate].forEach((field) => {
+                    if (!field) {
+                        return;
+                    }
+                    field.setAttribute('min', minDate);
+                    field.setAttribute('max', maxDate);
 
-<div class="flex items-center gap-4">
-    <button type="submit"
-            class="inline-flex items-center gap-2 text-sm font-semibold text-white px-6 py-2.5 rounded-lg shadow-sm transition"
-            style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-        </svg>
-        Save Course
-    </button>
-    <a href="{{ path('app_admin_courses') }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
-</div>
+                    if (field.value && (field.value < minDate || field.value > maxDate)) {
+                        field.value = '';
+                    }
+                });
+            };
 
-{{ form_end(form) }}
+            const toggleSections = (mode) => {
+                sections.forEach((section) => {
+                    section.classList.toggle('hidden', section.dataset.termSection !== mode);
+                });
+
+                if (mode === 'new') {
+                    applyDateBounds();
+                }
+            };
+
+            const setInitialState = () => {
+                const checked = document.querySelector('input[name="{{ form.termMode.vars.full_name|e('js') }}"]:checked');
+                toggleSections(checked ? checked.value : 'existing');
+            };
+
+            modeInputs.forEach((input) => {
+                input.addEventListener('change', () => toggleSections(input.value));
+            });
+
+            [yearStart, yearEnd].forEach((field) => {
+                field?.addEventListener('change', applyDateBounds);
+                field?.addEventListener('input', applyDateBounds);
+            });
+
+            setInitialState();
+            applyDateBounds();
+        });
+    </script>
+{% endif %}
+{% if courseFormErrors is not empty %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const messages = {{ courseFormErrors|json_encode|raw }};
+            messages.forEach((message) => {
+                if (typeof showToast === 'function') {
+                    showToast('error', message);
+                }
+            });
+        });
+    </script>
+{% endif %}
 {% endblock %}

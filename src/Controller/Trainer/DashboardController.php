@@ -2,10 +2,13 @@
 
 namespace App\Controller\Trainer;
 
+use App\Entity\Course;
 use App\Entity\CourseMaterial;
 use App\Entity\CourseWeek;
 use App\Entity\TrainerEvent;
 use App\Form\CourseMaterialType;
+use App\Form\CourseType;
+use App\Repository\AcademicTermRepository;
 use App\Repository\CourseRepository;
 use App\Repository\CourseWeekRepository;
 use App\Repository\TrainerEventRepository;
@@ -22,7 +25,7 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 class DashboardController extends AbstractController
 {
     #[Route('/dashboard', name: 'app_trainer_dashboard')]
-    public function index(CourseRepository $courseRepository, EntityManagerInterface $em): Response
+    public function index(CourseRepository $courseRepository, EntityManagerInterface $em, AcademicTermRepository $termRepository): Response
     {
         /** @var \App\Entity\User $trainer */
         $trainer = $this->getUser();
@@ -42,6 +45,7 @@ class DashboardController extends AbstractController
             'myStudentsCount' => $myStudentsCount,
             'pendingReviewsCount' => 0,
             'courses' => array_slice($courses, 0, 5),
+            'currentTerm' => $termRepository->findCurrentTerm(),
         ]);
     }
 
@@ -54,6 +58,49 @@ class DashboardController extends AbstractController
         return $this->render('trainer/courses.html.twig', [
             'user' => $trainer,
             'courses' => $courses,
+        ]);
+    }
+
+    #[Route('/courses/new', name: 'app_trainer_courses_new')]
+    public function courseNew(
+        Request $request,
+        EntityManagerInterface $em,
+        AcademicTermRepository $termRepository
+    ): Response {
+        /** @var \App\Entity\User $trainer */
+        $trainer = $this->getUser();
+
+        $course = new Course();
+        $course->setTrainer($trainer);
+
+        $form = $this->createForm(CourseType::class, $course, [
+            'show_trainer_field' => false,
+            'allow_term_selection' => false,
+        ]);
+        $form->handleRequest($request);
+
+        $activeTerm = $termRepository->findCurrentTerm();
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if (!$activeTerm) {
+                $this->addFlash('error', 'No active academic term is configured. Please contact the administrator.');
+                return $this->redirectToRoute('app_trainer_courses');
+            }
+
+            $course->setTerm($activeTerm);
+            $em->persist($course);
+            $em->flush();
+
+            $this->addFlash('success', sprintf('Course created for %s.', $activeTerm->getDisplayLabel() ?: 'the active term'));
+
+            return $this->redirectToRoute('app_trainer_course_view', ['id' => $course->getId()]);
+        }
+
+        return $this->render('trainer/course_form.html.twig', [
+            'user' => $trainer,
+            'form' => $form,
+            'title' => 'Create Course',
+            'activeTerm' => $activeTerm,
         ]);
     }
 
