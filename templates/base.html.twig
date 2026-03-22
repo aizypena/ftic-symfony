@@ -18,7 +18,9 @@
         <nav class="bg-white border-b border-gray-200 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16 items-center">
-                    <a href="{{ path('app_home') }}" class="text-xl font-bold text-feu-dark tracking-tight">FTIC</a>
+                    <a href="{{ path('app_home') }}" class="flex items-center gap-3">
+                        <img src="{{ asset('tamlabs-nav.jpeg') }}" alt="Far Eastern University Training & Innovation Center" class="h-9 w-auto object-contain">
+                    </a>
                     <div class="flex items-center gap-4">
                         {% if app.user %}
                             <span class="text-sm text-gray-600">{{ app.user.displayName }}</span>
@@ -31,7 +33,9 @@
                             {% endif %}
                             <a href="{{ path('app_logout') }}" class="text-sm font-medium bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition">Logout</a>
                         {% else %}
-                            <a href="{{ path('app_login') }}" class="text-sm font-medium text-feu-dark hover:text-feu-light transition">Login</a>
+                            <a href="{{ path('app_login') }}" class="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feu-dark" style="background-color:#0b3612;box-shadow:0 10px 20px rgba(11,54,18,0.25);">
+                                <span>Login</span>
+                            </a>
                         {% endif %}
                     </div>
                 </div>

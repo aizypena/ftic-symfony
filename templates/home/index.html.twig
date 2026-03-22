@@ -17,11 +17,11 @@
                 <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">Far Eastern University</h1>
                 <p class="text-lg sm:text-xl font-medium mb-6" style="color:#c4d9c8;">Training & Innovation Center</p>
                 {% if not app.user %}
-                <a href="{{ path('app_login') }}" class="inline-block bg-white font-semibold px-8 py-3 rounded-lg text-sm transition hover:opacity-90" style="color:#0b3612;">
+                <a href="{{ path('app_login') }}" class="inline-flex items-center gap-2 rounded-full bg-feu-dark px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-feu-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feu-dark">
                     Get Started
                 </a>
                 {% else %}
-                <a href="{{ path('app_dashboard') }}" class="inline-block bg-white font-semibold px-8 py-3 rounded-lg text-sm transition hover:opacity-90" style="color:#0b3612;">
+                <a href="{{ path('app_dashboard') }}" class="inline-flex items-center gap-2 rounded-full bg-feu-dark px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-feu-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feu-dark">
                     Go to Dashboard
                 </a>
                 {% endif %}
@@ -111,11 +111,11 @@
         <h2 class="text-3xl font-bold mb-3">Ready to get started?</h2>
         <p class="mb-8 text-sm" style="color:#c4d9c8;">Sign in to access your personalized dashboard and begin your training journey.</p>
         {% if not app.user %}
-            <a href="{{ path('app_login') }}" class="inline-block bg-white font-semibold px-8 py-3 rounded-lg text-sm hover:opacity-90 transition" style="color:#0b3612;">
+            <a href="{{ path('app_login') }}" class="inline-flex items-center gap-2 rounded-full bg-feu-dark px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-feu-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feu-dark">
                 Sign In Now
             </a>
         {% else %}
-            <a href="{{ path('app_dashboard') }}" class="inline-block bg-white font-semibold px-8 py-3 rounded-lg text-sm hover:opacity-90 transition" style="color:#0b3612;">
+            <a href="{{ path('app_dashboard') }}" class="inline-flex items-center gap-2 rounded-full bg-feu-dark px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-feu-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-feu-dark">
                 Go to Dashboard
             </a>
         {% endif %}
