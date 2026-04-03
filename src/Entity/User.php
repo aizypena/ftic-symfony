@@ -74,11 +74,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getRoles(): array
     {
-        return match($this->role) {
-            'admin'   => ['ROLE_ADMIN',   'ROLE_USER'],
-            'trainer' => ['ROLE_TRAINER', 'ROLE_USER'],
-            default   => ['ROLE_STUDENT', 'ROLE_USER'],
-        };
+        if ($this->role === 'admin') {
+            return ['ROLE_ADMIN', 'ROLE_USER'];
+        }
+
+        if ($this->role === 'professor') {
+            return ['ROLE_PROFESSOR', 'ROLE_USER'];
+        }
+
+        return ['ROLE_STUDENT', 'ROLE_USER'];
     }
 
     public function getRole(): string

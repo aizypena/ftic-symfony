@@ -14,8 +14,8 @@ admin_controllers:
     resource: '../src/Controller/Admin/'
     type: attribute
 
-trainer_controllers:
-    resource: '../src/Controller/Trainer/'
+professor_controllers:
+    resource: '../src/Controller/Professor/'
     type: attribute
 
 student_controllers:

@@ -35,12 +35,12 @@
             {% endif %}
         </div>
 
-        {# Trainer #}
+        {# Professor #}
         <div class="flex items-center gap-2 mt-auto pt-3 border-t border-gray-50">
             <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
-                {{ course.trainer ? course.trainer.displayName|first|upper : '?' }}
+                {{ course.professor ? course.professor.displayName|first|upper : '?' }}
             </div>
-            <span class="text-xs text-gray-500">{{ course.trainer ? course.trainer.displayName : 'No trainer assigned' }}</span>
+            <span class="text-xs text-gray-500">{{ course.professor ? course.professor.displayName : 'No professor assigned' }}</span>
         </div>
     </a>
     {% endfor %}

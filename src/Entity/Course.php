@@ -24,7 +24,7 @@ class Course
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?User $trainer = null;
+    private ?User $professor = null;
 
     #[ORM\ManyToOne(inversedBy: 'courses')]
     #[ORM\JoinColumn(nullable: false)]
@@ -73,8 +73,8 @@ class Course
     public function getDescription(): ?string { return $this->description; }
     public function setDescription(?string $description): static { $this->description = $description; return $this; }
 
-    public function getTrainer(): ?User { return $this->trainer; }
-    public function setTrainer(?User $trainer): static { $this->trainer = $trainer; return $this; }
+    public function getProfessor(): ?User { return $this->professor; }
+    public function setProfessor(?User $professor): static { $this->professor = $professor; return $this; }
 
     public function getTerm(): ?AcademicTerm
     {

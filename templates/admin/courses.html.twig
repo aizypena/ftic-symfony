@@ -28,7 +28,7 @@
             <tr class="border-b border-gray-100 text-left text-xs text-gray-400 uppercase tracking-wide">
                 <th class="px-6 py-3 font-medium">Course Name</th>
                 <th class="px-6 py-3 font-medium">School Year / Term</th>
-                <th class="px-6 py-3 font-medium">Trainer</th>
+                <th class="px-6 py-3 font-medium">Professor</th>
                 <th class="px-6 py-3 font-medium">Status</th>
                 <th class="px-6 py-3 font-medium">Created</th>
                 <th class="px-6 py-3 font-medium">Actions</th>
@@ -47,7 +47,7 @@
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 text-gray-500">
-                    {{ course.trainer ? course.trainer.displayName : '—' }}
+                    {{ course.professor ? course.professor.displayName : '—' }}
                 </td>
                 <td class="px-6 py-4">
                     {% if course.status == 'active' %}

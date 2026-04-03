@@ -163,7 +163,7 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/calendar', name: 'app_student_calendar')]
-    public function calendar(Request $request, \App\Repository\TrainerEventRepository $eventRepository): Response
+    public function calendar(Request $request, \App\Repository\ProfessorEventRepository $eventRepository): Response
     {
         /** @var \App\Entity\User $student */
         $student = $this->getUser();
@@ -174,7 +174,7 @@ class DashboardController extends AbstractController
         $calendarStart = $monthStart->modify('-' . $monthStart->format('w') . ' days');
         $calendarEnd = $calendarStart->modify('+41 days')->setTime(23, 59, 59);
 
-        // Fetch events for trainers whose courses this student is taking
+        // Fetch events for professors whose courses this student is taking
         $events = $eventRepository->findForStudentRange($student, $calendarStart, $calendarEnd);
 
         $eventsByDate = [];

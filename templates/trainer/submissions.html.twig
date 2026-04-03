@@ -1,6 +1,6 @@
 {% extends 'trainer/base.html.twig' %}
 
-{% block title %}Submissions – FTIC Trainer{% endblock %}
+{% block title %}Submissions – FTIC Professor{% endblock %}
 
 {% block body %}
 <div class="mb-6">
@@ -98,7 +98,7 @@
 <!-- Modal for Grading -->
 <div id="gradeModal" class="fixed inset-0 z-[100] hidden items-center justify-center backdrop-blur-sm bg-gray-900/40 transition-opacity" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div style="max-width: 500px;" class="w-full relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all border border-gray-100 flex flex-col mx-4">
-        <form id="gradeForm" action="{{ path('app_trainer_submission_grade') }}" method="POST" class="flex flex-col">
+        <form id="gradeForm" action="{{ path('app_professor_submission_grade') }}" method="POST" class="flex flex-col">
             <!-- Modal Header -->
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white w-full">
                 <h3 class="text-lg font-bold text-gray-900" id="modal-title">Evaluate Submission</h3>

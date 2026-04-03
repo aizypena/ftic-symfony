@@ -2,12 +2,12 @@
 
 namespace App\Entity;
 
-use App\Repository\TrainerEventRepository;
+use App\Repository\ProfessorEventRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: TrainerEventRepository::class)]
-class TrainerEvent
+#[ORM\Entity(repositoryClass: ProfessorEventRepository::class)]
+class ProfessorEvent
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -16,7 +16,7 @@ class TrainerEvent
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?User $trainer = null;
+    private ?User $professor = null;
 
     #[ORM\Column(length: 255)]
     private ?string $title = null;
@@ -43,14 +43,14 @@ class TrainerEvent
         return $this->id;
     }
 
-    public function getTrainer(): ?User
+    public function getProfessor(): ?User
     {
-        return $this->trainer;
+        return $this->professor;
     }
 
-    public function setTrainer(?User $trainer): static
+    public function setProfessor(?User $professor): static
     {
-        $this->trainer = $trainer;
+        $this->professor = $professor;
 
         return $this;
     }

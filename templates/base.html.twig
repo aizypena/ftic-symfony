@@ -26,8 +26,8 @@
                             <span class="text-sm text-gray-600">{{ app.user.displayName }}</span>
                             {% if is_granted('ROLE_ADMIN') %}
                                 <a href="{{ path('app_admin_dashboard') }}" class="text-sm font-medium text-feu-dark hover:text-feu-light transition">Dashboard</a>
-                            {% elseif is_granted('ROLE_TRAINER') %}
-                                <a href="{{ path('app_trainer_dashboard') }}" class="text-sm font-medium text-feu-dark hover:text-feu-light transition">Dashboard</a>
+                            {% elseif is_granted('ROLE_PROFESSOR') %}
+                                <a href="{{ path('app_professor_dashboard') }}" class="text-sm font-medium text-feu-dark hover:text-feu-light transition">Dashboard</a>
                             {% else %}
                                 <a href="{{ path('app_student_dashboard') }}" class="text-sm font-medium text-feu-dark hover:text-feu-light transition">Dashboard</a>
                             {% endif %}

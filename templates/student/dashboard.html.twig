@@ -69,7 +69,7 @@
                     <div class="min-w-0">
                         <p class="text-sm font-semibold text-gray-800 group-hover:text-feu-dark truncate">{{ course.name }}</p>
                         <p class="text-xs text-gray-400 mt-0.5">
-                            {{ course.trainer ? course.trainer.displayName : 'No trainer' }} &middot; {{ course.weeks|length }} weeks
+                            {{ course.professor ? course.professor.displayName : 'No professor' }} &middot; {{ course.weeks|length }} weeks
                             {% if course.term %}&middot; {{ course.term.schoolYear }} - {{ course.term.termLabel }}{% endif %}
                         </p>
                     </div>

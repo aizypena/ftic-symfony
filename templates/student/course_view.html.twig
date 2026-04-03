@@ -34,14 +34,14 @@
                     <span class="h-1.5 w-1.5 rounded-full" style="background-color:{% if course.status == 'active' %}#bbf7d0{% else %}#fee2e2{% endif %};"></span>
                     {{ course.status|capitalize }}
                 </span>
-                {% if course.trainer %}
+                {% if course.professor %}
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-base font-semibold text-white">
-                            {{ course.trainer.displayName|first|upper }}
+                            {{ course.professor.displayName|first|upper }}
                         </div>
                         <div class="text-right">
-                            <p class="text-xs uppercase tracking-[0.25em] text-white/60">Trainer</p>
-                            <p class="text-sm font-semibold text-white">{{ course.trainer.displayName }}</p>
+                            <p class="text-xs uppercase tracking-[0.25em] text-white/60">Professor</p>
+                            <p class="text-sm font-semibold text-white">{{ course.professor.displayName }}</p>
                         </div>
                     </div>
                 {% endif %}
@@ -232,7 +232,7 @@
                                         </div>
                                         {% if sub.status == 'graded' and sub.feedback %}
                                             <div class="mt-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-md border border-gray-100">
-                                                <span class="font-semibold text-xs text-gray-500 uppercase block mb-1">Trainer Feedback</span>
+                                                <span class="font-semibold text-xs text-gray-500 uppercase block mb-1">Professor Feedback</span>
                                                 {{ sub.feedback|nl2br }}
                                             </div>
                                         {% endif %}

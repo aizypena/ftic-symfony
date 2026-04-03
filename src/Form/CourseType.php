@@ -42,16 +42,16 @@ class CourseType extends AbstractType
                 'attr'     => ['placeholder' => 'Brief course description…', 'rows' => 4],
             ]);
 
-        if ($options['show_trainer_field']) {
-            $builder->add('trainer', EntityType::class, [
+        if ($options['show_professor_field']) {
+            $builder->add('professor', EntityType::class, [
                 'class'        => User::class,
-                'label'        => 'Assign Trainer',
+                'label'        => 'Assign Professor',
                 'required'     => false,
-                'placeholder'  => '— No trainer assigned —',
+                'placeholder'  => '— No professor assigned —',
                 'choice_label' => fn(User $u) => $u->getDisplayName() . ' (' . $u->getEmail() . ')',
                 'query_builder' => fn(UserRepository $repo) => $repo->createQueryBuilder('u')
                     ->where('u.role = :role')
-                    ->setParameter('role', 'trainer')
+                    ->setParameter('role', 'professor')
                     ->orderBy('u.lastName', 'ASC'),
             ]);
         }
@@ -151,11 +151,11 @@ class CourseType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Course::class,
-            'show_trainer_field' => true,
+            'show_professor_field' => true,
             'allow_term_selection' => false,
         ]);
 
-        $resolver->setAllowedTypes('show_trainer_field', 'bool');
+        $resolver->setAllowedTypes('show_professor_field', 'bool');
         $resolver->setAllowedTypes('allow_term_selection', 'bool');
     }
 

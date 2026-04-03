@@ -1,6 +1,6 @@
 {% extends 'trainer/base.html.twig' %}
 
-{% block title %}Courses – FTIC Trainer{% endblock %}
+{% block title %}Courses – FTIC Professor{% endblock %}
 
 {% block body %}
 <div class="mb-6 flex items-center justify-between flex-wrap gap-4">
@@ -8,7 +8,7 @@
         <h1 class="text-2xl font-bold text-gray-900">My Courses</h1>
         <p class="text-sm text-gray-500 mt-1">Courses assigned to you</p>
     </div>
-    <a href="{{ path('app_trainer_courses_new') }}"
+    <a href="{{ path('app_professor_courses_new') }}"
        class="inline-flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg shadow-sm transition"
        style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +60,7 @@
                 </td>
                 <td class="px-6 py-4 text-gray-400">{{ course.createdAt|date('M d, Y') }}</td>
                 <td class="px-6 py-4">
-                    <a href="{{ path('app_trainer_course_view', {id: course.id}) }}"
+                          <a href="{{ path('app_professor_course_view', {id: course.id}) }}"
                        class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition"
                        style="background-color:#0b3612;" onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
                         Manage

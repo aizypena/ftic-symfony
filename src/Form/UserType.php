@@ -38,7 +38,7 @@ class UserType extends AbstractType
                 'label'   => 'Role',
                 'choices' => [
                     'Admin'   => 'admin',
-                    'Trainer' => 'trainer',
+                    'Professor' => 'professor',
                     'Student' => 'student',
                 ],
             ])

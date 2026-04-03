@@ -35,7 +35,7 @@ security:
     # Note: Only the *first* matching rule is applied
     access_control:
         - { path: ^/admin,   roles: ROLE_ADMIN }
-        - { path: ^/trainer, roles: ROLE_TRAINER }
+        - { path: ^/professor, roles: ROLE_PROFESSOR }
         - { path: ^/student, roles: ROLE_STUDENT }
         - { path: ^/dashboard, roles: ROLE_USER }
 

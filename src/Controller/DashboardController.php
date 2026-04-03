@@ -20,8 +20,8 @@ class DashboardController extends AbstractController
             return $this->redirectToRoute('app_admin_dashboard');
         }
 
-        if ($this->isGranted('ROLE_TRAINER')) {
-            return $this->redirectToRoute('app_trainer_dashboard');
+        if ($this->isGranted('ROLE_PROFESSOR')) {
+            return $this->redirectToRoute('app_professor_dashboard');
         }
 
         if ($this->isGranted('ROLE_STUDENT')) {
