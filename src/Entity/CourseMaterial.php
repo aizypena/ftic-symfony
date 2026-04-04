@@ -33,6 +33,13 @@ class CourseMaterial
     #[ORM\Column]
     private \DateTimeImmutable $uploadedAt;
 
+    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    private int $displayOrder = 1;
+
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?self $prerequisiteMaterial = null;
+
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
@@ -54,4 +61,10 @@ class CourseMaterial
     public function setOriginalName(string $originalName): static { $this->originalName = $originalName; return $this; }
 
     public function getUploadedAt(): \DateTimeImmutable { return $this->uploadedAt; }
+
+    public function getDisplayOrder(): int { return $this->displayOrder; }
+    public function setDisplayOrder(int $displayOrder): static { $this->displayOrder = $displayOrder; return $this; }
+
+    public function getPrerequisiteMaterial(): ?self { return $this->prerequisiteMaterial; }
+    public function setPrerequisiteMaterial(?self $prerequisiteMaterial): static { $this->prerequisiteMaterial = $prerequisiteMaterial; return $this; }
 }

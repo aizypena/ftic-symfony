@@ -10,8 +10,9 @@
 {% endfor %}
 
 <section class="mb-8 space-y-6">
-    <div class="relative overflow-hidden rounded-3xl hero-banner hero-banner--student px-6 py-7 text-white shadow-xl">
-        <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3), transparent 45%), radial-gradient(circle at 80% 0%, rgba(255,255,255,0.25), transparent 50%);"></div>
+    <div class="relative overflow-hidden rounded-3xl hero-banner hero-banner--admin-course px-8 py-8 text-white shadow-2xl"
+         style="background-color:#0b3612;">
+        <div class="absolute inset-0 opacity-25" style="background-image: radial-gradient(circle at 15% 15%, rgba(92,141,103,0.35), transparent 45%), radial-gradient(circle at 75% 0%, rgba(196,217,200,0.25), transparent 50%);"></div>
         <div class="relative flex flex-wrap items-start justify-between gap-6">
             <div class="space-y-3 max-w-3xl">
                 <a href="{{ path('app_student_courses') }}" class="inline-flex items-center gap-1 text-xs text-emerald-100/80 hover:text-white transition">
@@ -21,7 +22,7 @@
                     Back to My Courses
                 </a>
                 <div class="space-y-1">
-                    <p class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">Course Journey</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.45em] text-emerald-200/80">Course Journey</p>
                     <h1 class="text-3xl font-semibold leading-tight">{{ course.name }}</h1>
                 </div>
                 {% if course.description %}
@@ -89,7 +90,7 @@
         <p class="text-xs text-gray-400">Tap a week to expand details</p>
     </div>
     <div class="space-y-3">
-{% for w in 1..14 %}
+{% for w in orderedWeekNumbers %}
     {% set week = weeks[w] is defined ? weeks[w] : null %}
     {% set hasMaterials = week and week.materials|length > 0 %}
 
@@ -123,7 +124,12 @@
             {% if hasMaterials %}
                 <ul class="space-y-2">
                     {% for material in week.materials %}
+                    {% set isUnlocked = unlockedMaterialIds[material.id]|default(true) %}
+                    {% set isViewed = viewedMaterialIds[material.id]|default(false) %}
                     <li class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:border-emerald-100 hover:bg-emerald-50/40 transition"
+                        data-material-row
+                        data-material-id="{{ material.id }}"
+                        data-material-unlocked="{{ isUnlocked ? '1' : '0' }}"
                         data-student-search-item
                         data-student-search-text="{{ 'week ' ~ w ~ ' ' ~ material.originalName ~ ' ' ~ material.uploadedAt|date('M d, Y') ~ ' material file' }}">
                         <div class="flex items-center gap-3 min-w-0">
@@ -133,28 +139,76 @@
                                 </svg>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-sm font-medium text-gray-800 truncate">{{ material.originalName }}</p>
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span data-view-indicator class="inline-flex shrink-0 items-center justify-center rounded-full border"
+                                          style="width:16px;height:16px;line-height:1;border-color:{{ isViewed ? '#059669' : '#d1d5db' }};background-color:{{ isViewed ? '#059669' : '#ffffff' }};color:{{ isViewed ? '#ffffff' : 'transparent' }};font-size:11px;font-weight:700;">
+                                        {% if isViewed %}
+                                            &#10003;
+                                        {% endif %}
+                                    </span>
+
+                                    {% if isUnlocked %}
+                                        <button type="button"
+                                                data-mark-url="{{ path('app_student_material_mark_viewed', {id: material.id}) }}"
+                                                data-file-url="{{ asset('uploads/materials/' ~ material.filename) }}"
+                                                data-file-name="{{ material.originalName|e('html_attr') }}"
+                                                onclick="handleMaterialOpen(this)"
+                                                class="text-sm font-medium text-gray-800 truncate text-left hover:text-emerald-700 hover:underline transition cursor-pointer">
+                                            {{ material.originalName }}
+                                        </button>
+                                    {% else %}
+                                        <p class="text-sm font-medium text-gray-800 truncate">{{ material.originalName }}</p>
+                                    {% endif %}
+                                </div>
+
                                 <p class="text-xs text-gray-400">{{ material.uploadedAt|date('M d, Y') }}</p>
+                                {% if not isUnlocked %}
+                                    <p class="text-[11px] text-amber-700 font-medium">{{ materialLockReasons[material.id]|default('Locked until earlier requirements are completed.') }}</p>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <button type="button"
-                                    onclick="openPdfViewer('{{ asset('uploads/materials/' ~ material.filename) }}', '{{ material.originalName|e('html_attr') }}')"
-                                    class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 transition">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                </svg>
-                                View
-                            </button>
-                            <a href="{{ asset('uploads/materials/' ~ material.filename) }}"
-                               download="{{ material.originalName }}"
-                               class="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                </svg>
-                                Download
-                            </a>
+                            {% if isUnlocked %}
+                                <a href="{{ asset('uploads/materials/' ~ material.filename) }}"
+                                   download="{{ material.originalName }}"
+                                   class="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                    Download
+                                </a>
+
+                                <button type="button"
+                                        data-material-open-button
+                                        data-mark-url="{{ path('app_student_material_mark_viewed', {id: material.id}) }}"
+                                        data-file-url="{{ asset('uploads/materials/' ~ material.filename) }}"
+                                        data-file-name="{{ material.originalName|e('html_attr') }}"
+                                        onclick="handleMaterialOpen(this)"
+                                        class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                                        style="background-color:#0b3612;">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    View
+                                </button>
+                            {% else %}
+                                <button type="button"
+                                        data-material-open-button
+                                        data-mark-url="{{ path('app_student_material_mark_viewed', {id: material.id}) }}"
+                                        data-file-url="{{ asset('uploads/materials/' ~ material.filename) }}"
+                                        data-file-name="{{ material.originalName|e('html_attr') }}"
+                                        disabled
+                                        class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5 cursor-not-allowed whitespace-nowrap"
+                                        style="background-color:#d1d5db;">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    Locked
+                                </button>
+                                <span class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400">Download locked</span>
+                            {% endif %}
                         </div>
                     </li>
                     {% endfor %}
@@ -321,6 +375,56 @@ function openPdfViewer(url, name) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+}
+
+async function handleMaterialOpen(button) {
+    if (!button || button.disabled) {
+        return;
+    }
+
+    const row = button.closest('[data-material-row]');
+    const markUrl = button.dataset.markUrl;
+    const fileUrl = button.dataset.fileUrl;
+    const fileName = button.dataset.fileName || 'Module';
+
+    try {
+        const body = new URLSearchParams();
+        body.set('token', '{{ csrf_token('student-mark-material-view') }}');
+
+        const response = await fetch(markUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body.toString(),
+        });
+
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            const message = payload.message || 'This module is locked. Complete the previous module first.';
+            if (typeof showToast === 'function') {
+                showToast('error', message);
+            } else {
+                alert(message);
+            }
+            return;
+        }
+
+        row?.querySelector('.text-amber-700')?.remove();
+        const indicator = row?.querySelector('[data-view-indicator]');
+        if (indicator) {
+            indicator.style.borderColor = '#059669';
+            indicator.style.backgroundColor = '#059669';
+            indicator.style.color = '#ffffff';
+            indicator.innerHTML = '&#10003;';
+        }
+
+        openPdfViewer(fileUrl, fileName);
+    } catch (error) {
+        if (typeof showToast === 'function') {
+            showToast('error', 'Unable to open this module right now.');
+        }
+    }
 }
 
 function closePdfViewer() {

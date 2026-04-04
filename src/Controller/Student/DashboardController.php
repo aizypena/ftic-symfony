@@ -5,6 +5,11 @@ namespace App\Controller\Student;
 use App\Repository\AnnouncementRepository;
 use App\Repository\CourseRepository;
 use App\Repository\CourseWeekRepository;
+use App\Entity\Course;
+use App\Entity\CourseMaterial;
+use App\Entity\StudentMaterialView;
+use App\Entity\User;
+use App\Repository\StudentMaterialViewRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +26,7 @@ class DashboardController extends AbstractController
         /** @var \App\Entity\User $me */
         $me = $this->getUser();
 
-        $myCourses = $courseRepo->createActiveForStudentQueryBuilder($me)
+        $myCourses = $courseRepo->createEnrolledInActiveTermQueryBuilder($me)
             ->orderBy('c.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
@@ -45,7 +50,7 @@ class DashboardController extends AbstractController
         /** @var \App\Entity\User $me */
         $me = $this->getUser();
 
-        $myCourses = $courseRepo->createActiveForStudentQueryBuilder($me)
+        $myCourses = $courseRepo->createEnrolledInActiveTermQueryBuilder($me)
             ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
@@ -57,11 +62,17 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/courses/{id}', name: 'app_student_course_view')]
-    public function courseView(int $id, CourseRepository $courseRepo, CourseWeekRepository $weekRepo, \Doctrine\ORM\EntityManagerInterface $em): Response
+    public function courseView(
+        int $id,
+        CourseRepository $courseRepo,
+        CourseWeekRepository $weekRepo,
+        \Doctrine\ORM\EntityManagerInterface $em,
+        StudentMaterialViewRepository $materialViewRepository
+    ): Response
     {
         /** @var \App\Entity\User $me */
         $me     = $this->getUser();
-        $course = $courseRepo->findActiveCourseForStudent($me, $id);
+        $course = $courseRepo->findEnrolledInActiveTermCourseForStudent($me, $id);
 
         if (!$course) {
             $this->addFlash('error', 'You are not enrolled in that course.');
@@ -77,6 +88,24 @@ class DashboardController extends AbstractController
             }
         }
 
+        $orderedWeeksRaw = $weekRepo->findBy(
+            ['course' => $course],
+            ['displayOrder' => 'ASC', 'weekNumber' => 'ASC']
+        );
+
+        $orderedWeekNumbers = [];
+        foreach ($orderedWeeksRaw as $week) {
+            $weekNumber = $week->getWeekNumber();
+            $orderedWeekNumbers[] = $weekNumber;
+        }
+
+        // Keep placeholders for missing weeks while preserving professor-defined order first.
+        for ($w = 1; $w <= 14; $w++) {
+            if (!\in_array($w, $orderedWeekNumbers, true)) {
+                $orderedWeekNumbers[] = $w;
+            }
+        }
+
         $submissionsRaw = $em->getRepository(\App\Entity\StudentSubmission::class)
             ->findBy(['student' => $me]);
         
@@ -87,12 +116,81 @@ class DashboardController extends AbstractController
             }
         }
 
+        $viewedMaterialIds = $materialViewRepository->findViewedMaterialIdsForStudentInCourse($me, $course);
+        $viewedMaterialSet = array_fill_keys($viewedMaterialIds, true);
+        $submittedWeekIds = $this->getSubmittedWeekIdsForCourse($em, $me, $course);
+        [$unlockedMaterialIds, $materialLockReasons] = $this->buildMaterialAccessMap(
+            $course,
+            $viewedMaterialSet,
+            $submittedWeekIds
+        );
+
         return $this->render('student/course_view.html.twig', [
             'user'              => $me,
             'course'            => $course,
             'weeks'             => $weeks,
+            'orderedWeekNumbers' => $orderedWeekNumbers,
             'submissionsByWeek' => $submissionsByWeek,
+            'viewedMaterialIds' => $viewedMaterialSet,
+            'unlockedMaterialIds' => $unlockedMaterialIds,
+            'materialLockReasons' => $materialLockReasons,
         ]);
+    }
+
+    #[Route('/materials/{id}/mark-viewed', name: 'app_student_material_mark_viewed', methods: ['POST'], requirements: ['id' => '\\d+'])]
+    public function markMaterialViewed(
+        int $id,
+        Request $request,
+        \Doctrine\ORM\EntityManagerInterface $em,
+        CourseRepository $courseRepository,
+        StudentMaterialViewRepository $materialViewRepository
+    ): \Symfony\Component\HttpFoundation\JsonResponse {
+        /** @var User $student */
+        $student = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('student-mark-material-view', (string) $request->request->get('token'))) {
+            return $this->json(['success' => false, 'message' => 'Invalid request token.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $material = $em->find(CourseMaterial::class, $id);
+        if (!$material || !$material->getWeek()) {
+            return $this->json(['success' => false, 'message' => 'Module not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $course = $material->getCourse();
+        $enrolledCourse = $courseRepository->findEnrolledInActiveTermCourseForStudent($student, (int) $course->getId());
+        if (!$enrolledCourse) {
+            return $this->json(['success' => false, 'message' => 'You are not enrolled in this course.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $viewedMaterialIds = $materialViewRepository->findViewedMaterialIdsForStudentInCourse($student, $course);
+        $viewedMaterialSet = array_fill_keys($viewedMaterialIds, true);
+        $submittedWeekIds = $this->getSubmittedWeekIdsForCourse($em, $student, $course);
+        [$unlockedMaterialIds, $materialLockReasons] = $this->buildMaterialAccessMap($course, $viewedMaterialSet, $submittedWeekIds);
+
+        $materialId = (int) $material->getId();
+        if (!(bool) ($unlockedMaterialIds[$materialId] ?? false)) {
+            return $this->json([
+                'success' => false,
+                'message' => $materialLockReasons[$materialId] ?? 'This module is locked until earlier requirements are completed.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $existing = $materialViewRepository->findOneBy([
+            'student' => $student,
+            'material' => $material,
+        ]);
+
+        if (!$existing) {
+            $view = new StudentMaterialView();
+            $view->setStudent($student)
+                ->setMaterial($material)
+                ->setViewedAt(new \DateTimeImmutable());
+            $em->persist($view);
+            $em->flush();
+        }
+
+        return $this->json(['success' => true]);
     }
 
     #[Route('/courses/{courseId}/weeks/{weekId}/upload', name: 'app_student_submission_upload', methods: ['POST'])]
@@ -107,7 +205,7 @@ class DashboardController extends AbstractController
     ): Response {
         /** @var \App\Entity\User $me */
         $me = $this->getUser();
-        $course = $courseRepo->findActiveCourseForStudent($me, $courseId);
+        $course = $courseRepo->findEnrolledInActiveTermCourseForStudent($me, $courseId);
         $week = $weekRepo->find($weekId);
 
         if (!$course || !$week || $week->getCourse() !== $course) {
@@ -215,5 +313,79 @@ class DashboardController extends AbstractController
             'days' => $days,
             'monthEvents' => $events,
         ]);
+    }
+
+    /**
+     * @param array<int, bool> $viewedMaterialSet
+     * @param int[] $submittedWeekIds
+     * @return array{0: array<int, bool>, 1: array<int, string>}
+     */
+    private function buildMaterialAccessMap(Course $course, array $viewedMaterialSet, array $submittedWeekIds): array
+    {
+        $submittedWeekSet = array_fill_keys($submittedWeekIds, true);
+        $unlockedMaterialIds = [];
+        $materialLockReasons = [];
+        $previousWeeksComplete = true;
+
+        foreach ($course->getWeeks() as $week) {
+            $weekMaterials = $week->getMaterials()->toArray();
+            $allWeekMaterialsViewed = true;
+
+            foreach ($weekMaterials as $material) {
+                if (!$material instanceof CourseMaterial || !$material->getId()) {
+                    continue;
+                }
+
+                $materialId = (int) $material->getId();
+                $isUnlocked = $previousWeeksComplete;
+
+                if ($isUnlocked) {
+                    $prerequisite = $material->getPrerequisiteMaterial();
+                    if ($prerequisite instanceof CourseMaterial && $prerequisite->getCourse() === $course && $prerequisite->getId()) {
+                        $prerequisiteId = (int) $prerequisite->getId();
+                        $isUnlocked = isset($viewedMaterialSet[$prerequisiteId]);
+
+                        if (!$isUnlocked) {
+                            $materialLockReasons[$materialId] = sprintf('Open "%s" first before this module.', $prerequisite->getOriginalName());
+                        }
+                    }
+                } else {
+                    $materialLockReasons[$materialId] = 'Complete all modules and required submissions from previous weeks first.';
+                }
+
+                $unlockedMaterialIds[$materialId] = $isUnlocked;
+                if (!isset($viewedMaterialSet[$materialId])) {
+                    $allWeekMaterialsViewed = false;
+                }
+            }
+
+            $submissionCompleted = !$week->isSubmissionRequired() || isset($submittedWeekSet[(int) $week->getId()]);
+            $isWeekComplete = $allWeekMaterialsViewed && $submissionCompleted;
+            $previousWeeksComplete = $previousWeeksComplete && $isWeekComplete;
+        }
+
+        return [$unlockedMaterialIds, $materialLockReasons];
+    }
+
+    /**
+     * @return int[]
+     */
+    private function getSubmittedWeekIdsForCourse(
+        \Doctrine\ORM\EntityManagerInterface $em,
+        User $student,
+        Course $course
+    ): array {
+        $submittedWeekIds = $em->createQuery(
+            'SELECT DISTINCT IDENTITY(s.courseWeek) AS weekId
+            FROM App\\Entity\\StudentSubmission s
+            JOIN s.courseWeek w
+            WHERE s.student = :student
+            AND w.course = :course'
+        )
+            ->setParameter('student', $student)
+            ->setParameter('course', $course)
+            ->getScalarResult();
+
+        return array_values(array_map(static fn (array $row): int => (int) $row['weekId'], $submittedWeekIds));
     }
 }

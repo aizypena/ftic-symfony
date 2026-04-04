@@ -4,7 +4,6 @@ namespace App\Repository;
 
 use App\Entity\Course;
 use App\Entity\User;
-use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -19,25 +18,19 @@ class CourseRepository extends ServiceEntityRepository
         parent::__construct($registry, Course::class);
     }
 
-    public function createActiveForStudentQueryBuilder(User $student, ?DateTimeImmutable $date = null): QueryBuilder
+    public function createEnrolledInActiveTermQueryBuilder(User $student): QueryBuilder
     {
-        $date ??= new DateTimeImmutable('today');
-
         return $this->createQueryBuilder('c')
             ->join('c.students', 's')
             ->join('c.term', 't')
             ->where('s = :student')
-            ->andWhere('c.status = :status')
             ->andWhere('t.isActive = true')
-            ->andWhere(':today BETWEEN t.startDate AND t.endDate')
-            ->setParameter('student', $student)
-            ->setParameter('status', 'active')
-            ->setParameter('today', $date->setTime(0, 0));
+            ->setParameter('student', $student);
     }
 
-    public function findActiveCourseForStudent(User $student, int $courseId, ?DateTimeImmutable $date = null): ?Course
+    public function findEnrolledInActiveTermCourseForStudent(User $student, int $courseId): ?Course
     {
-        return $this->createActiveForStudentQueryBuilder($student, $date)
+        return $this->createEnrolledInActiveTermQueryBuilder($student)
             ->andWhere('c.id = :courseId')
             ->setParameter('courseId', $courseId)
             ->getQuery()

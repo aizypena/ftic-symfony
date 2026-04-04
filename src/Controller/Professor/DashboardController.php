@@ -14,6 +14,7 @@ use App\Repository\CourseWeekRepository;
 use App\Repository\ProfessorEventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -45,7 +46,7 @@ class DashboardController extends AbstractController
             'myStudentsCount' => $myStudentsCount,
             'pendingReviewsCount' => 0,
             'courses' => array_slice($courses, 0, 5),
-            'currentTerm' => $termRepository->findCurrentTerm(),
+            'currentTerm' => $termRepository->findActiveTerm(),
         ]);
     }
 
@@ -79,7 +80,7 @@ class DashboardController extends AbstractController
         ]);
         $form->handleRequest($request);
 
-        $activeTerm = $termRepository->findCurrentTerm();
+        $activeTerm = $termRepository->findActiveTerm();
 
         if ($form->isSubmitted() && $form->isValid()) {
             if (!$activeTerm) {
@@ -121,19 +122,43 @@ class DashboardController extends AbstractController
         }
 
         // Ensure weeks 1-14 exist for this course
-        $weeks = [];
+        $weeksByNumber = [];
         for ($w = 1; $w <= 14; $w++) {
             $week = $weekRepository->findOneBy(['course' => $course, 'weekNumber' => $w]);
             if (!$week) {
                 $week = new CourseWeek();
                 $week->setCourse($course)
                      ->setWeekNumber($w)
+                     ->setDisplayOrder($w)
                      ->setTitle('Week ' . $w);
                 $em->persist($week);
             }
-            $weeks[$w] = $week;
+            $weeksByNumber[$w] = $week;
         }
         $em->flush();
+
+        $orderedWeeks = $weekRepository->findBy(
+            ['course' => $course],
+            ['displayOrder' => 'ASC', 'weekNumber' => 'ASC']
+        );
+        $orderedMaterials = $this->getOrderedMaterialsForCourse($course);
+
+        $materialRanks = [];
+        foreach ($orderedMaterials as $index => $orderedMaterial) {
+            $materialRanks[$orderedMaterial->getId()] = $index;
+        }
+
+        $materialPrerequisiteChoices = [];
+        foreach ($orderedMaterials as $materialItem) {
+            $materialId = (int) $materialItem->getId();
+            $materialPrerequisiteChoices[$materialId] = [];
+
+            foreach ($orderedMaterials as $candidate) {
+                if ($materialRanks[$candidate->getId()] < $materialRanks[$materialId]) {
+                    $materialPrerequisiteChoices[$materialId][] = $candidate;
+                }
+            }
+        }
 
         $uploadForm = $this->createForm(CourseMaterialType::class);
         $uploadForm->handleRequest($request);
@@ -154,8 +179,15 @@ class DashboardController extends AbstractController
                 $file->move($uploadDir, $storedName);
 
                 $material = new CourseMaterial();
+
+                $maxOrder = (int) $em->createQuery('SELECT COALESCE(MAX(m.displayOrder), 0) FROM App\\Entity\\CourseMaterial m WHERE m.week = :week')
+                    ->setParameter('week', $weeksByNumber[$weekNum])
+                    ->getSingleScalarResult();
+                $nextOrder = $maxOrder + 1;
+
                 $material->setCourse($course)
-                         ->setWeek($weeks[$weekNum])
+                         ->setWeek($weeksByNumber[$weekNum])
+                         ->setDisplayOrder($nextOrder)
                          ->setFilename($storedName)
                          ->setOriginalName($originalName);
                 $em->persist($material);
@@ -169,9 +201,129 @@ class DashboardController extends AbstractController
         return $this->render('trainer/course_view.html.twig', [
             'user'       => $professor,
             'course'     => $course,
-            'weeks'      => $weeks,
+            'weeks'      => $weeksByNumber,
+            'orderedWeeks' => $orderedWeeks,
+            'materialPrerequisiteChoices' => $materialPrerequisiteChoices,
             'uploadForm' => $uploadForm,
         ]);
+    }
+
+    #[Route('/courses/{id}/weeks/reorder', name: 'app_professor_course_weeks_reorder', methods: ['POST'], requirements: ['id' => '\\d+'])]
+    public function reorderWeeks(int $id, Request $request, CourseRepository $courseRepository, CourseWeekRepository $weekRepository, EntityManagerInterface $em): JsonResponse
+    {
+        $professor = $this->getUser();
+        $course = $courseRepository->find($id);
+
+        if (!$course || $course->getProfessor() !== $professor) {
+            return $this->json(['error' => 'Course not found.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['error' => 'Invalid payload.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $token = (string) ($payload['token'] ?? '');
+        if (!$this->isCsrfTokenValid('reorder-weeks-' . $course->getId(), $token)) {
+            return $this->json(['error' => 'Invalid CSRF token.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $orderedWeekIds = $payload['orderedWeekIds'] ?? null;
+        if (!is_array($orderedWeekIds) || $orderedWeekIds === []) {
+            return $this->json(['error' => 'No order provided.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $courseWeeks = $weekRepository->findBy(['course' => $course]);
+        $courseWeekIds = array_map(static fn (CourseWeek $week) => $week->getId(), $courseWeeks);
+        sort($courseWeekIds);
+
+        $normalizedIds = array_values(array_map('intval', $orderedWeekIds));
+        sort($normalizedIds);
+
+        if ($normalizedIds !== $courseWeekIds) {
+            return $this->json(['error' => 'Order list does not match course modules.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $weekById = [];
+        foreach ($courseWeeks as $week) {
+            $weekById[$week->getId()] = $week;
+        }
+
+        $position = 1;
+        foreach ($orderedWeekIds as $weekId) {
+            $weekId = (int) $weekId;
+            if (!isset($weekById[$weekId])) {
+                return $this->json(['error' => 'Invalid module id.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $weekById[$weekId]->setDisplayOrder($position);
+            $position++;
+        }
+
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/weeks/{id}/materials/reorder', name: 'app_professor_week_materials_reorder', methods: ['POST'], requirements: ['id' => '\\d+'])]
+    public function reorderWeekMaterials(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $professor = $this->getUser();
+        $week = $em->find(CourseWeek::class, $id);
+
+        if (!$week || $week->getCourse()->getProfessor() !== $professor) {
+            return $this->json(['error' => 'Week not found.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['error' => 'Invalid payload.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $token = (string) ($payload['token'] ?? '');
+        if (!$this->isCsrfTokenValid('reorder-materials-week-' . $week->getId(), $token)) {
+            return $this->json(['error' => 'Invalid CSRF token.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $orderedMaterialIds = $payload['orderedMaterialIds'] ?? null;
+        if (!is_array($orderedMaterialIds) || $orderedMaterialIds === []) {
+            return $this->json(['error' => 'No order provided.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $materials = $em->getRepository(CourseMaterial::class)->findBy(
+            ['week' => $week],
+            ['displayOrder' => 'ASC', 'uploadedAt' => 'ASC']
+        );
+
+        $materialIds = array_map(static fn (CourseMaterial $material) => $material->getId(), $materials);
+        sort($materialIds);
+
+        $normalizedIds = array_values(array_map('intval', $orderedMaterialIds));
+        sort($normalizedIds);
+
+        if ($normalizedIds !== $materialIds) {
+            return $this->json(['error' => 'Order list does not match modules.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $materialById = [];
+        foreach ($materials as $material) {
+            $materialById[$material->getId()] = $material;
+        }
+
+        $position = 1;
+        foreach ($orderedMaterialIds as $materialId) {
+            $materialId = (int) $materialId;
+            if (!isset($materialById[$materialId])) {
+                return $this->json(['error' => 'Invalid module id.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $materialById[$materialId]->setDisplayOrder($position);
+            $position++;
+        }
+
+        $em->flush();
+
+        return $this->json(['success' => true]);
     }
 
     #[Route('/courses/{id}/toggle-status', name: 'app_professor_course_toggle', methods: ['POST'], requirements: ['id' => '\\d+'])]
@@ -224,6 +376,87 @@ class DashboardController extends AbstractController
 
         $this->addFlash('success', 'PDF deleted.');
         return $this->redirectToRoute('app_professor_course_view', ['id' => $courseId, '_fragment' => 'week-' . $weekNum]);
+    }
+
+    #[Route('/materials/{id}/prerequisite', name: 'app_professor_material_prerequisite_update', methods: ['POST'], requirements: ['id' => '\\d+'])]
+    public function materialPrerequisiteUpdate(int $id, EntityManagerInterface $em, Request $request): Response
+    {
+        /** @var \App\Entity\User $professor */
+        $professor = $this->getUser();
+        $material = $em->find(CourseMaterial::class, $id);
+
+        if (!$material || $material->getCourse()->getProfessor() !== $professor) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('material-prerequisite-' . $id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
+        $course = $material->getCourse();
+        $selectedPrerequisiteId = max(0, (int) $request->request->get('prerequisite_id', 0));
+
+        if ($selectedPrerequisiteId === 0) {
+            $material->setPrerequisiteMaterial(null);
+            $em->flush();
+
+            $this->addFlash('success', 'Module prerequisite cleared.');
+
+            $week = $material->getWeek();
+            $weekNumber = $week ? $week->getWeekNumber() : 1;
+
+            return $this->redirectToRoute('app_professor_course_view', [
+                'id' => $course->getId(),
+                '_fragment' => 'week-' . $weekNumber,
+            ]);
+        }
+
+        $selectedPrerequisite = $em->find(CourseMaterial::class, $selectedPrerequisiteId);
+        if (!$selectedPrerequisite || $selectedPrerequisite->getCourse() !== $course) {
+            $this->addFlash('error', 'Invalid prerequisite module selected.');
+
+            $week = $material->getWeek();
+            $weekNumber = $week ? $week->getWeekNumber() : 1;
+
+            return $this->redirectToRoute('app_professor_course_view', [
+                'id' => $course->getId(),
+                '_fragment' => 'week-' . $weekNumber,
+            ]);
+        }
+
+        $orderedMaterials = $this->getOrderedMaterialsForCourse($course);
+        $materialRanks = [];
+        foreach ($orderedMaterials as $index => $orderedMaterial) {
+            $materialRanks[$orderedMaterial->getId()] = $index;
+        }
+
+        $materialRank = $materialRanks[$material->getId()] ?? null;
+        $selectedPrerequisiteRank = $materialRanks[$selectedPrerequisite->getId()] ?? null;
+
+        if ($materialRank === null || $selectedPrerequisiteRank === null || $selectedPrerequisiteRank >= $materialRank) {
+            $this->addFlash('error', 'Prerequisite must come before this module in course order.');
+
+            $week = $material->getWeek();
+            $weekNumber = $week ? $week->getWeekNumber() : 1;
+
+            return $this->redirectToRoute('app_professor_course_view', [
+                'id' => $course->getId(),
+                '_fragment' => 'week-' . $weekNumber,
+            ]);
+        }
+
+        $material->setPrerequisiteMaterial($selectedPrerequisite);
+        $em->flush();
+
+        $this->addFlash('success', 'Module prerequisite updated.');
+
+        $week = $material->getWeek();
+        $weekNumber = $week ? $week->getWeekNumber() : 1;
+
+        return $this->redirectToRoute('app_professor_course_view', [
+            'id' => $course->getId(),
+            '_fragment' => 'week-' . $weekNumber,
+        ]);
     }
 
     #[Route('/weeks/{id}/update', name: 'app_professor_week_update', methods: ['POST'], requirements: ['id' => '\\d+'])]
@@ -493,5 +726,21 @@ class DashboardController extends AbstractController
             'year' => max(2000, min(2100, (int) $request->request->get('year', $request->query->get('year', (int) date('Y'))))),
             'month' => max(1, min(12, (int) $request->request->get('month', $request->query->get('month', (int) date('n'))))),
         ];
+    }
+
+    /**
+     * @return list<CourseMaterial>
+     */
+    private function getOrderedMaterialsForCourse(Course $course): array
+    {
+        $orderedMaterials = [];
+
+        foreach ($course->getWeeks() as $week) {
+            foreach ($week->getMaterials() as $material) {
+                $orderedMaterials[] = $material;
+            }
+        }
+
+        return $orderedMaterials;
     }
 }

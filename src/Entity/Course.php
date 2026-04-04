@@ -40,7 +40,7 @@ class Course
     private Collection $materials;
 
     #[ORM\OneToMany(mappedBy: 'course', targetEntity: CourseWeek::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[ORM\OrderBy(['weekNumber' => 'ASC'])]
+    #[ORM\OrderBy(['displayOrder' => 'ASC', 'weekNumber' => 'ASC'])]
     private Collection $weeks;
 
     #[ORM\ManyToMany(targetEntity: User::class)]

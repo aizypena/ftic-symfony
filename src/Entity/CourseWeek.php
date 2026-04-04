@@ -22,6 +22,9 @@ class CourseWeek
     #[ORM\Column]
     private int $weekNumber = 1;
 
+    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    private int $displayOrder = 1;
+
     #[ORM\Column(length: 255)]
     private string $title = '';
 
@@ -29,7 +32,7 @@ class CourseWeek
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'week', targetEntity: CourseMaterial::class)]
-    #[ORM\OrderBy(['originalName' => 'ASC'])]
+    #[ORM\OrderBy(['displayOrder' => 'ASC', 'uploadedAt' => 'ASC'])]
     private Collection $materials;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
@@ -40,6 +43,9 @@ class CourseWeek
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $allowedFileTypes = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isSequentialMaterialUnlockEnabled = false;
 
     public function __construct()
     {
@@ -53,6 +59,9 @@ class CourseWeek
 
     public function getWeekNumber(): int { return $this->weekNumber; }
     public function setWeekNumber(int $weekNumber): static { $this->weekNumber = $weekNumber; return $this; }
+
+    public function getDisplayOrder(): int { return $this->displayOrder; }
+    public function setDisplayOrder(int $displayOrder): static { $this->displayOrder = $displayOrder; return $this; }
 
     public function getTitle(): string { return $this->title; }
     public function setTitle(string $title): static { $this->title = $title; return $this; }
@@ -71,4 +80,7 @@ class CourseWeek
 
     public function getAllowedFileTypes(): ?array { return $this->allowedFileTypes; }
     public function setAllowedFileTypes(?array $allowedFileTypes): static { $this->allowedFileTypes = $allowedFileTypes; return $this; }
+
+    public function isSequentialMaterialUnlockEnabled(): bool { return $this->isSequentialMaterialUnlockEnabled; }
+    public function setIsSequentialMaterialUnlockEnabled(bool $isSequentialMaterialUnlockEnabled): static { $this->isSequentialMaterialUnlockEnabled = $isSequentialMaterialUnlockEnabled; return $this; }
 }

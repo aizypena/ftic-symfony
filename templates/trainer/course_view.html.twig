@@ -55,9 +55,9 @@
             <select name="week_number"
                     class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
                     style="focus:ring:2px solid #5c8d67;">
-                {% for w in 1..14 %}
-                    <option value="{{ w }}">
-                        Week {{ w }}{% if weeks[w] is defined and weeks[w].title != 'Week ' ~ w %} – {{ weeks[w].title }}{% endif %}
+                {% for week in orderedWeeks %}
+                    <option value="{{ week.weekNumber }}">
+                        Week {{ week.weekNumber }}{% if week.title != 'Week ' ~ week.weekNumber %} – {{ week.title }}{% endif %}
                     </option>
                 {% endfor %}
             </select>
@@ -104,7 +104,8 @@
 
 {# ── Weeks Accordion ── #}
 <div class="space-y-2">
-    {% for weekNum, week in weeks %}
+    {% for week in orderedWeeks %}
+        {% set weekNum = week.weekNumber %}
         <div id="week-{{ weekNum }}" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
             data-professor-search-item
             data-professor-search-text="{{ 'week ' ~ weekNum ~ ' ' ~ week.title ~ ' ' ~ (week.description ?: '') }}">
@@ -200,12 +201,24 @@
 
                 {# PDF list for this week #}
                 {% if week.materials|length > 0 %}
-                <ul class="space-y-2">
+                <div class="mb-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800">
+                    Drag uploaded modules to reorder. Student and professor views will follow this sequence.
+                </div>
+                <ul class="space-y-2" data-material-list
+                    data-material-reorder-url="{{ path('app_professor_week_materials_reorder', {id: week.id}) }}"
+                    data-material-reorder-token="{{ csrf_token('reorder-materials-week-' ~ week.id) }}">
                     {% for material in week.materials %}
                     <li class="flex items-center justify-between p-3 rounded-lg gap-4" style="background:#f8faf8;"
+                        draggable="true"
+                        data-material-id="{{ material.id }}"
                         data-professor-search-item
                         data-professor-search-text="{{ 'week ' ~ weekNum ~ ' ' ~ material.originalName ~ ' ' ~ material.uploadedAt|date('M d, Y') }}">
                         <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-gray-300 cursor-grab" title="Drag to reorder module">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/>
+                                </svg>
+                            </span>
                             <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                  style="background-color:#e8f2ea;">
                                 <svg class="w-4 h-4" style="color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,6 +231,23 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
+                            <form method="post"
+                                  action="{{ path('app_professor_material_prerequisite_update', {id: material.id}) }}"
+                                  class="flex items-center gap-2">
+                                <input type="hidden" name="_token" value="{{ csrf_token('material-prerequisite-' ~ material.id) }}">
+                                <label class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prerequisite</label>
+                                <select name="prerequisite_id"
+                                        onchange="this.form.submit()"
+                                        class="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:outline-none">
+                                    <option value="0">None</option>
+                                    {% for choice in materialPrerequisiteChoices[material.id]|default([]) %}
+                                        <option value="{{ choice.id }}" {% if material.prerequisiteMaterial and material.prerequisiteMaterial.id == choice.id %}selected{% endif %}>
+                                            W{{ choice.week ? choice.week.weekNumber : '-' }} - {{ choice.originalName }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+
                             <a href="{{ asset('uploads/materials/' ~ material.filename) }}" target="_blank"
                                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
                                style="background-color:#5c8d67;">View</a>
@@ -302,6 +332,73 @@ function toggleWeek(n) {
             }, 100);
         }
     }
+})();
+
+(function () {
+    const materialLists = Array.from(document.querySelectorAll('[data-material-list]'));
+
+    materialLists.forEach((list) => {
+        let dragging = null;
+
+        const getRows = () => Array.from(list.querySelectorAll('[data-material-id]'));
+
+        const persistOrder = async () => {
+            const orderedMaterialIds = getRows().map((row) => parseInt(row.dataset.materialId, 10));
+
+            try {
+                const response = await fetch(list.dataset.materialReorderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        orderedMaterialIds,
+                        token: list.dataset.materialReorderToken,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to persist module order');
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast('success', 'Module order saved.');
+                }
+            } catch (error) {
+                if (typeof showToast === 'function') {
+                    showToast('error', 'Could not save module order. Please try again.');
+                }
+            }
+        };
+
+        getRows().forEach((row) => {
+            row.addEventListener('dragstart', () => {
+                dragging = row;
+                row.classList.add('opacity-70');
+            });
+
+            row.addEventListener('dragend', () => {
+                row.classList.remove('opacity-70');
+                dragging = null;
+                persistOrder();
+            });
+
+            row.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                if (!dragging || dragging === row) {
+                    return;
+                }
+
+                const rect = row.getBoundingClientRect();
+                const shouldPlaceAfter = event.clientY > rect.top + rect.height / 2;
+                const sibling = shouldPlaceAfter ? row.nextElementSibling : row;
+
+                if (dragging !== sibling) {
+                    list.insertBefore(dragging, sibling);
+                }
+            });
+        });
+    });
 })();
 </script>
 {% endblock %}

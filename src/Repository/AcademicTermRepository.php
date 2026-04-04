@@ -31,6 +31,16 @@ class AcademicTermRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findActiveTerm(): ?AcademicTerm
+    {
+        return $this->createQueryBuilder('t')
+            ->where('t.isActive = true')
+            ->orderBy('t.startDate', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function deactivateAllExcept(?AcademicTerm $term = null): void
     {
         $qb = $this->createQueryBuilder('t')
