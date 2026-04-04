@@ -36,7 +36,9 @@
         </thead>
         <tbody class="divide-y divide-gray-50">
             {% for course in courses %}
-            <tr class="hover:bg-gray-50 transition">
+            <tr class="hover:bg-gray-50 transition"
+                data-admin-search-item
+                data-admin-search-text="{{ course.name ~ ' ' ~ (course.term ? course.term.schoolYear ~ ' ' ~ course.term.termLabel : 'not set') ~ ' ' ~ (course.professor ? course.professor.displayName : '') ~ ' ' ~ course.status }}">
                 <td class="px-6 py-4 font-medium text-gray-900">{{ course.name }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">
                     {% if course.term %}

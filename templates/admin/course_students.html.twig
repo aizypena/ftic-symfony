@@ -37,7 +37,9 @@
                 </thead>
                 <tbody class="divide-y divide-gray-50">
                     {% for student in enrolled %}
-                    <tr class="hover:bg-gray-50 transition">
+                    <tr class="hover:bg-gray-50 transition"
+                        data-admin-search-item
+                        data-admin-search-text="{{ (student.fullName ?: '') ~ ' ' ~ student.email ~ ' enrolled student' }}">
                         <td class="px-6 py-4 font-medium text-gray-900">{{ student.fullName ?: '—' }}</td>
                         <td class="px-6 py-4 text-gray-500">{{ student.email }}</td>
                         <td class="px-6 py-4">
@@ -101,6 +103,8 @@
                              style="display:none; position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:220px; overflow-y:auto; background:#fff; border:1px solid #e5e7eb; border-radius:0.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
                             {% for student in available %}
                             <label class="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition"
+                                data-admin-search-item
+                                data-admin-search-text="{{ student.displayName ~ ' ' ~ student.email ~ ' available student' }}"
                                    onclick="event.stopPropagation()">
                                 <input type="checkbox"
                                        name="student_ids[]"

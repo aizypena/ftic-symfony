@@ -176,7 +176,9 @@ body {
                 <div class="space-y-1 overflow-hidden mt-1 w-full relative z-10">
                     {% for event in day.events|slice(0, 4) %}
                         {% set isWholeDay = (event.startsAt|date('H:i', false) == '00:00' and (not event.endsAt or event.endsAt|date('H:i', false) == '23:59')) %}
-                        <div onclick="openModal('view-shell-{{ event.id }}')"
+                            <div onclick="openModal('view-shell-{{ event.id }}')"
+                                data-student-search-item
+                                data-student-search-text="{{ event.title ~ ' ' ~ (event.description ?: '') ~ ' ' ~ event.startsAt|date('M d, Y g:ia') ~ ' ' ~ event.professor.firstName ~ ' ' ~ event.professor.lastName }}"
                              class="w-full text-left rounded px-2 py-1 text-xs font-medium cursor-pointer border border-transparent hover:border-green-600 hover:shadow-sm transition"
                              style="background-color: #e8f2ea; color: #0b3612; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {% if not isWholeDay %}

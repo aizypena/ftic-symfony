@@ -105,7 +105,9 @@
 {# ── Weeks Accordion ── #}
 <div class="space-y-2">
     {% for weekNum, week in weeks %}
-    <div id="week-{{ weekNum }}" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div id="week-{{ weekNum }}" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            data-professor-search-item
+            data-professor-search-text="{{ 'week ' ~ weekNum ~ ' ' ~ week.title ~ ' ' ~ (week.description ?: '') }}">
 
         {# Week toggle button #}
         <button type="button"
@@ -200,7 +202,9 @@
                 {% if week.materials|length > 0 %}
                 <ul class="space-y-2">
                     {% for material in week.materials %}
-                    <li class="flex items-center justify-between p-3 rounded-lg gap-4" style="background:#f8faf8;">
+                    <li class="flex items-center justify-between p-3 rounded-lg gap-4" style="background:#f8faf8;"
+                        data-professor-search-item
+                        data-professor-search-text="{{ 'week ' ~ weekNum ~ ' ' ~ material.originalName ~ ' ' ~ material.uploadedAt|date('M d, Y') }}">
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                  style="background-color:#e8f2ea;">

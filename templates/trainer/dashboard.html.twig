@@ -86,7 +86,9 @@
             {% if courses|length > 0 %}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {% for course in courses|slice(0, 4) %}
-                        <a href="{{ path('app_professor_course_view', { id: course.id }) }}" class="block border border-gray-100 rounded-xl p-4 hover:border-feu-light hover:shadow-sm transition group">
+                                <a href="{{ path('app_professor_course_view', { id: course.id }) }}" class="block border border-gray-100 rounded-xl p-4 hover:border-feu-light hover:shadow-sm transition group"
+                                    data-professor-search-item
+                                    data-professor-search-text="{{ course.name ~ ' ' ~ (course.description ?: '') ~ ' ' ~ course.students|length ~ ' students' }}">
                             <h3 class="font-bold text-gray-900 group-hover:text-feu-dark mb-1">{{ course.name }}</h3>
                             <p class="text-sm text-gray-500 line-clamp-2 mb-3">{{ course.description }}</p>
                             <div class="flex items-center justify-between mt-auto">

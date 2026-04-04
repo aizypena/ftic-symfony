@@ -85,9 +85,9 @@
                     </svg>
                 </button>
                 <div class="flex flex-1 max-w-lg h-10">
-                    <input type="text" placeholder="Search..."
+                    <input id="studentPageSearch" type="text" placeholder="Search this page..."
                            class="flex-1 h-full border border-gray-300 rounded-l-lg px-4 text-sm focus:outline-none focus:ring-2 focus:ring-feu-light focus:border-transparent">
-                    <button class="h-full px-4 rounded-r-lg text-white flex items-center justify-center" style="background-color:#0b3612;">
+                    <button id="studentPageSearchButton" type="button" class="h-full px-4 rounded-r-lg text-white flex items-center justify-center" style="background-color:#0b3612;">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
                         </svg>
@@ -112,6 +112,68 @@
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('hidden');
         });
+
+        (function () {
+            const searchInput = document.getElementById('studentPageSearch');
+            const searchButton = document.getElementById('studentPageSearchButton');
+
+            if (!searchInput || !searchButton) {
+                return;
+            }
+
+            const searchableItems = Array.from(document.querySelectorAll('[data-student-search-item]'));
+            if (searchableItems.length === 0) {
+                searchInput.disabled = true;
+                searchInput.placeholder = 'No searchable content on this page';
+                searchButton.disabled = true;
+                searchButton.classList.add('opacity-60', 'cursor-not-allowed');
+                return;
+            }
+
+            const main = document.querySelector('main');
+            const pageHeading = document.querySelector('main h1');
+            if (pageHeading && pageHeading.textContent) {
+                searchInput.placeholder = 'Search ' + pageHeading.textContent.trim().toLowerCase() + '...';
+            }
+
+            const noResults = document.createElement('div');
+            noResults.id = 'studentPageSearchNoResults';
+            noResults.className = 'hidden mb-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600';
+            noResults.innerHTML = '<strong class="font-semibold text-gray-900">No matches found.</strong> Try a different keyword.';
+
+            if (main) {
+                main.insertAdjacentElement('afterbegin', noResults);
+            }
+
+            const normalize = (value) => value.toLowerCase().replace(/\s+/g, ' ').trim();
+
+            const applySearch = () => {
+                const query = normalize(searchInput.value || '');
+                const terms = query === '' ? [] : query.split(' ').filter(Boolean);
+                let visibleCount = 0;
+
+                searchableItems.forEach((item) => {
+                    const haystack = normalize(item.dataset.studentSearchText || item.textContent || '');
+                    const isMatch = terms.length === 0 || terms.every((term) => haystack.includes(term));
+
+                    item.classList.toggle('hidden', !isMatch);
+                    if (isMatch) {
+                        visibleCount++;
+                    }
+                });
+
+                noResults.classList.toggle('hidden', !(terms.length > 0 && visibleCount === 0));
+            };
+
+            searchInput.addEventListener('input', applySearch);
+            searchButton.addEventListener('click', applySearch);
+            searchInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    applySearch();
+                }
+            });
+        })();
     </script>
     {{ include('partials/_toast.html.twig') }}
     {{ include('partials/_confirm_modal.html.twig') }}

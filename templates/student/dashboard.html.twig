@@ -29,7 +29,9 @@
             {% if announcements|length > 0 %}
             <ul class="divide-y divide-gray-50 overflow-y-auto" style="max-height:380px;">
                 {% for ann in announcements %}
-                <li class="px-6 py-4">
+                <li class="px-6 py-4"
+                    data-student-search-item
+                    data-student-search-text="{{ ann.title ~ ' ' ~ ann.content ~ ' ' ~ ann.createdAt|date('M d, Y g:i A') }}">
                     <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <p class="text-sm font-semibold text-gray-900">{{ ann.title }}</p>
                         <span class="text-xs text-gray-400">{{ ann.createdAt|date('M d, Y · g:i A') }}</span>
@@ -63,7 +65,8 @@
         {% if myCourses|length > 0 %}
         <ul class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {% for course in myCourses|slice(0, 6) %}
-            <li>
+            <li data-student-search-item
+                data-student-search-text="{{ course.name ~ ' ' ~ (course.professor ? course.professor.displayName : 'no professor') ~ ' ' ~ course.weeks|length ~ ' weeks ' ~ (course.term ? course.term.schoolYear ~ ' ' ~ course.term.termLabel : '') ~ ' ' ~ course.status }}">
                 <a href="{{ path('app_student_course_view', {id: course.id}) }}"
                    class="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-100 hover:border-feu-light hover:bg-feu-pale transition group">
                     <div class="min-w-0">

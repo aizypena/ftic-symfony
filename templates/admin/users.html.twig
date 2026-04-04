@@ -35,7 +35,9 @@
         </thead>
         <tbody class="divide-y divide-gray-50">
             {% for u in users %}
-            <tr class="hover:bg-gray-50 transition">
+            <tr class="hover:bg-gray-50 transition"
+                data-admin-search-item
+                data-admin-search-text="{{ (u.fullName ?: '') ~ ' ' ~ u.email ~ ' ' ~ u.role ~ ' ' ~ (u.isConfirmed ? 'confirmed' : 'pending') }}">
                 <td class="px-6 py-4 font-medium text-gray-900">{{ u.fullName ?: '—' }}</td>
                 <td class="px-6 py-4 text-gray-500">{{ u.email }}</td>
                 <td class="px-6 py-4">

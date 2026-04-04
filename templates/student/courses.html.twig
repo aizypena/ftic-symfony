@@ -11,7 +11,9 @@
 {% if myCourses|length > 0 %}
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
     {% for course in myCourses %}
-    <a href="{{ path('app_student_course_view', {id: course.id}) }}"
+     <a href="{{ path('app_student_course_view', {id: course.id}) }}"
+         data-student-search-item
+         data-student-search-text="{{ course.name ~ ' ' ~ (course.description ?: '') ~ ' ' ~ (course.professor ? course.professor.displayName : 'no professor assigned') ~ ' ' ~ (course.term ? course.term.schoolYear ~ ' ' ~ course.term.termLabel : '') ~ ' ' ~ course.status }}"
        class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col gap-3 hover:shadow-md hover:border-feu-light transition group">
 
         {# Status badge #}

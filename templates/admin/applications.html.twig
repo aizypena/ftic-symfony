@@ -54,7 +54,9 @@
         </thead>
         <tbody class="divide-y divide-gray-50">
             {% for student in pending %}
-            <tr class="hover:bg-gray-50 transition">
+            <tr class="hover:bg-gray-50 transition"
+                data-admin-search-item
+                data-admin-search-text="{{ (student.fullName ?: '') ~ ' ' ~ student.email ~ ' pending application' }}">
                 <td class="px-6 py-4 font-medium text-gray-900">{{ student.fullName ?: '—' }}</td>
                 <td class="px-6 py-4 text-gray-500">{{ student.email }}</td>
                 <td class="px-6 py-4">
@@ -114,7 +116,9 @@
         </thead>
         <tbody class="divide-y divide-gray-50">
             {% for student in approved %}
-            <tr class="hover:bg-gray-50 transition">
+            <tr class="hover:bg-gray-50 transition"
+                data-admin-search-item
+                data-admin-search-text="{{ (student.fullName ?: '') ~ ' ' ~ student.email ~ ' approved student' }}">
                 <td class="px-6 py-4 font-medium text-gray-900">{{ student.fullName ?: '—' }}</td>
                 <td class="px-6 py-4 text-gray-500">{{ student.email }}</td>
                 <td class="px-6 py-4">
