@@ -42,9 +42,9 @@
     <div class="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">{{ msg }}</div>
 {% endfor %}
 
-{# ── Upload Panel ── #}
+{# ── Upload Panel (Supports PDFs & Videos) ── #}
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-    <h2 class="text-base font-semibold text-gray-900 mb-4">Upload PDF to a Week</h2>
+    <h2 class="text-base font-semibold text-gray-900 mb-4">Upload Course Material (PDF or Video)</h2>
     {{ form_start(uploadForm, {attr: {enctype: 'multipart/form-data', id: 'upload-form', novalidate: 'novalidate'}}) }}
     {{ form_errors(uploadForm) }}
 
@@ -63,9 +63,9 @@
             </select>
         </div>
 
-        {# File drop zone #}
+        {# Unified Multi-Format Drop Zone ── Upgraded to hint at more formats #}
         <div class="sm:col-span-2">
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Select PDF File</label>
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Select File</label>
             <div id="drop-zone"
                  onclick="document.getElementById('upload-form').querySelector('input[type=file]').click()"
                  ondragover="event.preventDefault();this.style.borderColor='#5c8d67';this.style.background='#f0f7f1';"
@@ -74,21 +74,24 @@
                  style="border:2px dashed #e5e7eb;border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;background:#f9fafb;transition:border-color .2s,background .2s;">
                 <div id="dz-placeholder">
                     <svg style="width:2rem;height:2rem;margin:0 auto 6px;color:#d1d5db;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 4v16M17 4v16M3 8h18M3 16h18M9 12h6"/>
                     </svg>
-                    <p style="font-size:13px;color:#9ca3af;">Click to browse or drag a PDF here</p>
-                    <p style="font-size:11px;color:#d1d5db;margin-top:2px;">Max 50 MB • PDF only</p>
+                    <p style="font-size:13px;color:#9ca3af;">Click to browse or drag a file here</p>
+                    <p style="font-size:11px;color:#d1d5db;margin-top:2px;">Max 100 MB • PDFs or Videos (MP4, MOV, WEBM, MKV, AVI)</p>
                 </div>
                 <div id="dz-selected" style="display:none;">
-                    <svg style="width:2rem;height:2rem;margin:0 auto 6px;color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg id="dz-selected-icon-pdf" style="width:2rem;height:2rem;margin:0 auto 6px;color:#0b3612; display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <svg id="dz-selected-icon-video" style="width:2rem;height:2rem;margin:0 auto 6px;color:#0b3612; display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                     </svg>
                     <p id="dz-filename" style="font-size:13px;font-weight:600;color:#0b3612;"></p>
                     <p id="dz-filesize" style="font-size:11px;color:#5c8d67;margin-top:2px;"></p>
                     <p style="font-size:11px;color:#9ca3af;margin-top:4px;">Click to change file</p>
                 </div>
             </div>
-            <div style="display:none;">{{ form_widget(uploadForm.file, {attr: {accept: '.pdf,application/pdf'}}) }}</div>
+            <div style="display:none;">{{ form_widget(uploadForm.file, {attr: {accept: '.pdf,application/pdf,video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo'}}) }}</div>
             {{ form_errors(uploadForm.file) }}
         </div>
     </div>
@@ -96,8 +99,8 @@
     <button type="submit"
             class="mt-4 text-sm font-semibold text-white px-6 py-2.5 rounded-lg transition"
             style="background-color:#0b3612;"
-            onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor='#0b3612'">
-        Upload PDF
+            onmouseover="this.style.backgroundColor='#5c8d67'" onmouseout="this.style.backgroundColor:#0b3612'">
+        Upload Material
     </button>
     {{ form_end(uploadForm) }}
 </div>
@@ -127,7 +130,7 @@
             <div class="flex items-center gap-3 shrink-0">
                 <span class="text-xs px-2 py-0.5 rounded-full"
                       style="{% if week.materials|length > 0 %}background-color:#e8f2ea;color:#0b3612;{% else %}background:#f3f4f6;color:#9ca3af;{% endif %}">
-                    {{ week.materials|length }} PDF{{ week.materials|length != 1 ? 's' : '' }}
+                    {{ week.materials|length }} Item{{ week.materials|length != 1 ? 's' : '' }}
                 </span>
                 <svg id="chevron-{{ weekNum }}" class="w-4 h-4 text-gray-400 transition-transform duration-200"
                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +202,7 @@
                     </form>
                 </details>
 
-                {# PDF list for this week #}
+                {# Dynamic Content list for this week #}
                 {% if week.materials|length > 0 %}
                 <div class="mb-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800">
                     Drag uploaded modules to reorder. Student and professor views will follow this sequence.
@@ -208,6 +211,11 @@
                     data-material-reorder-url="{{ path('app_professor_week_materials_reorder', {id: week.id}) }}"
                     data-material-reorder-token="{{ csrf_token('reorder-materials-week-' ~ week.id) }}">
                     {% for material in week.materials %}
+                    
+                    {# ── FIX 1: Extended video checking support to catch mov, webm, mkv, and avi ── #}
+                    {% set ext = material.filename|split('.')|last|lower %}
+                    {% set isVideo = ext in ['mp4', 'webm', 'mov', 'mkv', 'avi'] %}
+                    
                     <li class="flex items-center justify-between p-3 rounded-lg gap-4" style="background:#f8faf8;"
                         draggable="true"
                         data-material-id="{{ material.id }}"
@@ -219,17 +227,32 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/>
                                 </svg>
                             </span>
+                            
                             <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                 style="background-color:#e8f2ea;">
-                                <svg class="w-4 h-4" style="color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
+                                 style="{% if isVideo %}background-color:#e0f2fe;{% else %}background-color:#e8f2ea;{% endif %}">
+                                {% if isVideo %}
+                                    <svg class="w-4 h-4" style="color:#0369a1;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" style="color:#0b3612;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                {% endif %}
                             </div>
+                            
                             <div class="min-w-0">
-                                <p class="text-sm font-medium text-gray-800 truncate">{{ material.originalName }}</p>
+                                <div class="flex items-center gap-1.5">
+                                    <p class="text-sm font-medium text-gray-800 truncate">{{ material.originalName }}</p>
+                                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wide shrink-0" 
+                                          style="{% if isVideo %}background-color:#f0f9ff;color:#0369a1; border:1px solid #bae6fd;{% else %}background-color:#f0fdf4;color:#166534; border:1px solid #bbf7d0;{% endif %}">
+                                        {{ isVideo ? ext|upper : 'PDF' }}
+                                    </span>
+                                </div>
                                 <p class="text-xs text-gray-400">{{ material.uploadedAt|date('M d, Y') }}</p>
                             </div>
                         </div>
+                        
                         <div class="flex items-center gap-2 shrink-0">
                             <form method="post"
                                   action="{{ path('app_professor_material_prerequisite_update', {id: material.id}) }}"
@@ -248,14 +271,32 @@
                                 </select>
                             </form>
 
-                            <a href="{{ asset('uploads/materials/' ~ material.filename) }}" target="_blank"
-                               class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
-                               style="background-color:#5c8d67;">View</a>
+                            {# View Inline Button #}
+                            <button type="button"
+                                    data-file-url="{{ asset('uploads/materials/' ~ material.filename) }}"
+                                    data-file-name="{{ material.originalName|e('html_attr') }}"
+                                    data-file-type="{{ isVideo ? 'video' : 'pdf' }}"
+                                    onclick="openInlineViewer(this.dataset.fileUrl, this.dataset.fileName, this.dataset.fileType)"
+                                    class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white cursor-pointer"
+                                    style="background-color:#5c8d67;">
+                                View
+                            </button>
+                            
+                            {# New Download Button #}
+                            <a href="{{ asset('uploads/materials/' ~ material.filename) }}" 
+                               download="{{ material.originalName }}"
+                               class="text-xs font-semibold px-3 py-1.5 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Download
+                            </a>
+
                             <form method="post"
                                   action="{{ path('app_professor_material_delete', {id: material.id}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete-material-' ~ material.id) }}">
                                 <button type="button"
-                                        onclick="openConfirmModal(this.closest('form'), 'This will permanently delete &quot;{{ material.originalName|e('html_attr') }}&quot;. This action cannot be undone.', 'Delete PDF')"
+                                        onclick="openConfirmModal(this.closest('form'), 'This will permanently delete &quot;{{ material.originalName|e('html_attr') }}&quot;. This action cannot be undone.', 'Delete Material')"
                                         class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white bg-red-500 hover:bg-red-600 transition">
                                     Delete
                                 </button>
@@ -265,13 +306,45 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-sm text-gray-400 py-2 text-center">No PDFs uploaded for this week yet.</p>
+                <p class="text-sm text-gray-400 py-2 text-center">No materials uploaded for this week yet.</p>
                 {% endif %}
 
             </div>
         </div>
     </div>
     {% endfor %}
+</div>
+
+{# ── Dynamic Inline Material Viewer Modal ── #}
+<div id="material-viewer-modal" class="fixed inset-0 z-50 hidden flex-col bg-black/70" onclick="if(event.target===this) closeInlineViewer()">
+    <div class="mx-auto flex h-full w-full max-w-4xl flex-col bg-white shadow-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <div id="viewer-icon-container" class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    {# Injected dynamically by JS #}
+                </div>
+                <span id="material-viewer-title" class="truncate text-sm font-semibold text-gray-900"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="closeInlineViewer()" class="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 bg-gray-100 flex items-center justify-center overflow-hidden">
+            {# PDF Container iframe #}
+            <iframe id="material-viewer-frame" src="" class="h-full w-full border-none hidden"></iframe>
+            
+            {# Native Video Player Container ── Supports fallback for non-native browser codecs #}
+            <div id="material-video-container" class="w-full h-full max-h-full hidden bg-black flex items-center justify-center">
+                <video id="material-video-player" controls controlsList="nodownload" class="w-full h-full object-contain">
+                    Your browser does not natively support playing this specific video container format inline. Please click download to review.
+                </video>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -286,6 +359,9 @@
     const selected   = document.getElementById('dz-selected');
     const fname      = document.getElementById('dz-filename');
     const fsize      = document.getElementById('dz-filesize');
+    
+    const iconPdf    = document.getElementById('dz-selected-icon-pdf');
+    const iconVideo  = document.getElementById('dz-selected-icon-video');
 
     function showFile(file) {
         placeholder.style.display = 'none';
@@ -295,6 +371,16 @@
         dz.dataset.selected       = '1';
         fname.textContent = file.name;
         fsize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        
+        // ── FIX 2: Added quick video validation parsing to dropzone ──
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (['mp4', 'webm', 'mov', 'mkv', 'avi'].includes(extension)) {
+            iconPdf.style.display = 'none';
+            iconVideo.style.display = 'block';
+        } else {
+            iconVideo.style.display = 'none';
+            iconPdf.style.display = 'block';
+        }
     }
 
     input.addEventListener('change', function () {
@@ -319,6 +405,64 @@ function toggleWeek(n) {
     body.style.display      = isOpen ? 'none' : 'block';
     chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
+
+{# ── Inline Media Viewer Controls ── #}
+function openInlineViewer(url, name, type) {
+    const modal = document.getElementById('material-viewer-modal');
+    const titleEl = document.getElementById('material-viewer-title');
+    const iconContainer = document.getElementById('viewer-icon-container');
+    const iframe = document.getElementById('material-viewer-frame');
+    const videoContainer = document.getElementById('material-video-container');
+    const videoPlayer = document.getElementById('material-video-player');
+    
+    titleEl.textContent = name;
+    
+    // Clear and reset display states
+    iframe.classList.add('hidden');
+    iframe.src = '';
+    videoContainer.classList.add('hidden');
+    videoPlayer.pause();
+    videoPlayer.src = '';
+    
+    if (type === 'video') {
+        // Render custom video iconography structures
+        iconContainer.className = "flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700";
+        iconContainer.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>`;
+        
+        // Initialize player
+        videoPlayer.src = url;
+        videoContainer.classList.remove('hidden');
+        videoPlayer.load();
+    } else {
+        // Fallback or explicit PDF iconography defaults
+        iconContainer.className = "flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700";
+        iconContainer.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`;
+        
+        iframe.src = url;
+        iframe.classList.remove('hidden');
+    }
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeInlineViewer() {
+    const modal = document.getElementById('material-viewer-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    
+    document.getElementById('material-viewer-frame').src = '';
+    const videoPlayer = document.getElementById('material-video-player');
+    videoPlayer.pause();
+    videoPlayer.src = '';
+    
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeInlineViewer();
+});
 
 // Auto-open from URL hash (e.g. #week-3 after upload redirect)
 (function () {

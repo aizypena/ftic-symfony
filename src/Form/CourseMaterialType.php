@@ -13,19 +13,26 @@ class CourseMaterialType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('file', FileType::class, [
-            'label' => 'PDF File',
+            'label' => 'Course Material File (PDF or Video)',
             'mapped' => false,
             'required' => true,
             'constraints' => [
                 new File([
-                    'maxSize' => '50M',
+                    'maxSize' => '100M',
                     'mimeTypes' => [
+                        // PDF Formats
                         'application/pdf',
                         'application/x-pdf',
                         'application/acrobat',
                         'application/vnd.pdf',
+                        // Video Formats
+                        'video/mp4',
+                        'video/webm',
+                        'video/quicktime',
+                        'video/x-matroska',
+                        'video/x-msvideo',
                     ],
-                    'mimeTypesMessage' => 'Please upload a valid PDF file.',
+                    'mimeTypesMessage' => 'Please upload a valid PDF document or Video file (MP4, MOV, WEBM, MKV, AVI).',
                 ]),
             ],
         ]);

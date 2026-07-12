@@ -175,7 +175,11 @@ class DashboardController extends AbstractController
 
                 $originalName = $file->getClientOriginalName();
                 $safeBase     = $slugger->slug(pathinfo($originalName, PATHINFO_FILENAME));
-                $storedName   = $safeBase . '-' . uniqid() . '.pdf';
+                
+                // ── FIX 1: Dynamically extract real extension instead of forcing .pdf ──
+                $extension    = $file->guessExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
+                $storedName   = $safeBase . '-' . uniqid() . '.' . strtolower($extension);
+                
                 $file->move($uploadDir, $storedName);
 
                 $material = new CourseMaterial();
@@ -193,7 +197,11 @@ class DashboardController extends AbstractController
                 $em->persist($material);
                 $em->flush();
 
-                $this->addFlash('success', 'PDF uploaded to Week ' . $weekNum . ' successfully.');
+                // ── FIX 2: Dynamic confirmation notice messages ──
+                $isVideo = in_array(strtolower($extension), ['mp4', 'webm', 'mov', 'mkv', 'avi']);
+                $fileTypeName = $isVideo ? 'Video' : 'Material';
+                
+                $this->addFlash('success', $fileTypeName . ' uploaded to Week ' . $weekNum . ' successfully.');
                 return $this->redirectToRoute('app_professor_course_view', ['id' => $id, '_fragment' => 'week-' . $weekNum]);
             }
         }
