@@ -169,14 +169,7 @@
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             {% if isUnlocked %}
-                                <a href="{{ asset('uploads/materials/' ~ material.filename) }}"
-                                   download="{{ material.originalName }}"
-                                   class="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                    </svg>
-                                    Download
-                                </a>
+                                {# ── REMOVED: Download Link element ── #}
 
                                 <button type="button"
                                         data-material-open-button
@@ -207,7 +200,6 @@
                                     </svg>
                                     Locked
                                 </button>
-                                <span class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400">Download locked</span>
                             {% endif %}
                         </div>
                     </li>
@@ -370,8 +362,6 @@ function openPdfViewer(url, name) {
     const modal = document.getElementById('pdf-viewer-modal');
     document.getElementById('pdf-viewer-title').textContent = name;
     document.getElementById('pdf-viewer-frame').src = url;
-    document.getElementById('pdf-viewer-download').href = url;
-    document.getElementById('pdf-viewer-download').setAttribute('download', name);
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
@@ -460,21 +450,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 <span id="pdf-viewer-title" class="truncate text-sm font-semibold text-gray-900"></span>
             </div>
             <div class="flex items-center gap-2">
-                <a id="pdf-viewer-download" href="#" download class="inline-flex items-center gap-1 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                    </svg>
-                    Download
-                </a>
-                <button type="button" onclick="closePdfViewer()" class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" onclick="closePdfViewer()" class="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
         </div>
-        <iframe id="pdf-viewer-frame" src="" class="h-full w-full flex-1 bg-slate-800" allowfullscreen></iframe>
+        <div class="flex-1 bg-gray-100">
+            <iframe id="pdf-viewer-frame" src="" class="h-full w-full border-none"></iframe>
+        </div>
     </div>
 </div>
-
 {% endblock %}
