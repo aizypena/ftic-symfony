@@ -126,6 +126,10 @@
                     {% for material in week.materials %}
                     {% set isUnlocked = unlockedMaterialIds[material.id]|default(true) %}
                     {% set isViewed = viewedMaterialIds[material.id]|default(false) %}
+                    
+                    {% set ext = material.filename|split('.')|last|lower %}
+                    {% set isVideo = ext in ['mp4', 'webm', 'mov', 'mkv', 'avi'] %}
+                    
                     <li class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-gray-100 hover:border-emerald-100 hover:bg-emerald-50/40 transition"
                         data-material-row
                         data-material-id="{{ material.id }}"
@@ -133,11 +137,20 @@
                         data-student-search-item
                         data-student-search-text="{{ 'week ' ~ w ~ ' ' ~ material.originalName ~ ' ' ~ material.uploadedAt|date('M d, Y') ~ ' material file' }}">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background-color:#ecfdf5;color:#0b3612;">
-                                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
+                            
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" 
+                                 style="{% if isVideo %}background-color:#e0f2fe;color:#0369a1;{% else %}background-color:#ecfdf5;color:#0b3612;{% endif %}">
+                                {% if isVideo %}
+                                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                {% endif %}
                             </div>
+                            
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span data-view-indicator class="inline-flex shrink-0 items-center justify-center rounded-full border"
@@ -152,6 +165,7 @@
                                                 data-mark-url="{{ path('app_student_material_mark_viewed', {id: material.id}) }}"
                                                 data-file-url="{{ asset('uploads/materials/' ~ material.filename) }}"
                                                 data-file-name="{{ material.originalName|e('html_attr') }}"
+                                                data-file-type="{{ isVideo ? 'video' : 'pdf' }}"
                                                 onclick="handleMaterialOpen(this)"
                                                 class="text-sm font-medium text-gray-800 truncate text-left hover:text-emerald-700 hover:underline transition cursor-pointer">
                                             {{ material.originalName }}
@@ -159,6 +173,11 @@
                                     {% else %}
                                         <p class="text-sm font-medium text-gray-800 truncate">{{ material.originalName }}</p>
                                     {% endif %}
+                                    
+                                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded tracking-wide shrink-0" 
+                                          style="{% if isVideo %}background-color:#f0f9ff;color:#0369a1; border:1px solid #bae6fd;{% else %}background-color:#f0fdf4;color:#166534; border:1px solid #bbf7d0;{% endif %}">
+                                        {{ isVideo ? ext|upper : 'PDF' }}
+                                    </span>
                                 </div>
 
                                 <p class="text-xs text-gray-400">{{ material.uploadedAt|date('M d, Y') }}</p>
@@ -169,13 +188,12 @@
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             {% if isUnlocked %}
-                                {# ── REMOVED: Download Link element ── #}
-
                                 <button type="button"
                                         data-material-open-button
                                         data-mark-url="{{ path('app_student_material_mark_viewed', {id: material.id}) }}"
                                         data-file-url="{{ asset('uploads/materials/' ~ material.filename) }}"
                                         data-file-name="{{ material.originalName|e('html_attr') }}"
+                                        data-file-type="{{ isVideo ? 'video' : 'pdf' }}"
                                         onclick="handleMaterialOpen(this)"
                                         class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
                                         style="background-color:#0b3612;">
@@ -187,10 +205,6 @@
                                 </button>
                             {% else %}
                                 <button type="button"
-                                        data-material-open-button
-                                        data-mark-url="{{ path('app_student_material_mark_viewed', {id: material.id}) }}"
-                                        data-file-url="{{ asset('uploads/materials/' ~ material.filename) }}"
-                                        data-file-name="{{ material.originalName|e('html_attr') }}"
                                         disabled
                                         class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5 cursor-not-allowed whitespace-nowrap"
                                         style="background-color:#d1d5db;">
@@ -343,6 +357,34 @@
 </div>
 </section>
 
+<div id="media-viewer-modal" class="fixed inset-0 z-50 hidden flex-col bg-black/70" onclick="if(event.target===this) closeMediaViewer()">
+    <div class="mx-auto flex h-full w-full max-w-4xl flex-col rounded-none bg-white shadow-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <div id="viewer-icon-container" class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                </div>
+                <span id="media-viewer-title" class="truncate text-sm font-semibold text-gray-900"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="closeMediaViewer()" class="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 bg-gray-100 flex items-center justify-center overflow-hidden">
+            <iframe id="media-viewer-frame" src="" class="h-full w-full border-none hidden"></iframe>
+            
+            <div id="media-video-container" class="w-full h-full max-h-full hidden bg-black flex items-center justify-center">
+                <video id="media-video-player" controls controlsList="nodownload" class="w-full h-full object-contain">
+                    Your browser does not natively support playing this specific video format inline.
+                </video>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function toggleWeek(n) {
     const panel = document.querySelector('[data-week-panel="' + n + '"]');
@@ -358,10 +400,38 @@ function toggleWeek(n) {
     toggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
 }
 
-function openPdfViewer(url, name) {
-    const modal = document.getElementById('pdf-viewer-modal');
-    document.getElementById('pdf-viewer-title').textContent = name;
-    document.getElementById('pdf-viewer-frame').src = url;
+function openMediaViewer(url, name, type) {
+    const modal = document.getElementById('media-viewer-modal');
+    const titleEl = document.getElementById('media-viewer-title');
+    const iconContainer = document.getElementById('viewer-icon-container');
+    const iframe = document.getElementById('media-viewer-frame');
+    const videoContainer = document.getElementById('media-video-container');
+    const videoPlayer = document.getElementById('media-video-player');
+    
+    titleEl.textContent = name;
+    
+    iframe.classList.add('hidden');
+    iframe.src = '';
+    videoContainer.classList.add('hidden');
+    videoPlayer.pause();
+    videoPlayer.src = '';
+    
+    if (type === 'video') {
+        iconContainer.className = "flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700";
+        iconContainer.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>`;
+        
+        videoPlayer.src = url;
+        videoContainer.classList.remove('hidden');
+        videoPlayer.load();
+    } else {
+        // Default to PDF / document icon
+        iconContainer.className = "flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700";
+        iconContainer.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`;
+        
+        iframe.src = url;
+        iframe.classList.remove('hidden');
+    }
+    
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
@@ -376,11 +446,12 @@ async function handleMaterialOpen(button) {
     const markUrl = button.dataset.markUrl;
     const fileUrl = button.dataset.fileUrl;
     const fileName = button.dataset.fileName || 'Module';
+    const fileType = button.dataset.fileType || 'pdf';
+
+    const body = new URLSearchParams();
+    body.set('token', '{{ csrf_token('student-mark-material-view') }}');
 
     try {
-        const body = new URLSearchParams();
-        body.set('token', '{{ csrf_token('student-mark-material-view') }}');
-
         const response = await fetch(markUrl, {
             method: 'POST',
             headers: {
@@ -409,7 +480,7 @@ async function handleMaterialOpen(button) {
             indicator.innerHTML = '&#10003;';
         }
 
-        openPdfViewer(fileUrl, fileName);
+        openMediaViewer(fileUrl, fileName, fileType);
     } catch (error) {
         if (typeof showToast === 'function') {
             showToast('error', 'Unable to open this module right now.');
@@ -417,16 +488,25 @@ async function handleMaterialOpen(button) {
     }
 }
 
-function closePdfViewer() {
-    const modal = document.getElementById('pdf-viewer-modal');
+function closeMediaViewer() {
+    const modal = document.getElementById('media-viewer-modal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    document.getElementById('pdf-viewer-frame').src = '';
+    
+    const iframe = document.getElementById('media-viewer-frame');
+    iframe.src = '';
+    iframe.classList.add('hidden');
+    
+    const videoPlayer = document.getElementById('media-video-player');
+    videoPlayer.pause();
+    videoPlayer.src = '';
+    document.getElementById('media-video-container').classList.add('hidden');
+    
     document.body.style.overflow = '';
 }
 
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closePdfViewer();
+    if (e.key === 'Escape') closeMediaViewer();
 });
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -436,30 +516,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-
-{# ── PDF Viewer Modal ── #}
-<div id="pdf-viewer-modal" class="fixed inset-0 z-50 hidden flex-col bg-black/70" onclick="if(event.target===this) closePdfViewer()">
-    <div class="mx-auto flex h-full w-full max-w-4xl flex-col rounded-none bg-white shadow-2xl">
-        <div class="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                </div>
-                <span id="pdf-viewer-title" class="truncate text-sm font-semibold text-gray-900"></span>
-            </div>
-            <div class="flex items-center gap-2">
-                <button type="button" onclick="closePdfViewer()" class="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <div class="flex-1 bg-gray-100">
-            <iframe id="pdf-viewer-frame" src="" class="h-full w-full border-none"></iframe>
-        </div>
-    </div>
-</div>
 {% endblock %}
